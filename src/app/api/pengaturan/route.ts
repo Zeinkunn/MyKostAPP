@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { requireRole } from '@/lib/rbac';
+import { ApiAuthError, requireAuthApi, requireRoleApi } from '@/lib/rbac';
 import { Role } from '@prisma/client';
 
 export async function GET() {
   try {
+    await requireAuthApi();
     let settings = await prisma.pengaturan.findUnique({
       where: { id: 'default' },
     });
@@ -23,13 +24,16 @@ export async function GET() {
 
     return NextResponse.json(settings);
   } catch (error: any) {
-    return NextResponse.json({ error: error.message || 'Unauthorized' }, { status: 401 });
+    if (error instanceof ApiAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
+    return NextResponse.json({ error: error.message || 'Terjadi kesalahan' }, { status: 500 });
   }
 }
 
 export async function PUT(req: NextRequest) {
   try {
-    await requireRole([Role.OWNER, Role.ADMIN]);
+    await requireRoleApi([Role.OWNER, Role.ADMIN]);
     const { harga_default, denda_per_hari, wa_template } = await req.json();
 
     const updated = await prisma.pengaturan.upsert({
@@ -49,6 +53,9 @@ export async function PUT(req: NextRequest) {
 
     return NextResponse.json(updated);
   } catch (error: any) {
+    if (error instanceof ApiAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
     return NextResponse.json({ error: error.message || 'Gagal menyimpan pengaturan' }, { status: 500 });
   }
 }

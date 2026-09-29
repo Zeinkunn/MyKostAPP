@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { requireRole } from '@/lib/rbac';
+import { ApiAuthError, requireRoleApi } from '@/lib/rbac';
 import { Role, StatusKamar, StatusKontrak, StatusTagihan } from '@prisma/client';
 import { sendWhatsAppMessage } from '@/lib/fonnte';
 
 export async function GET() {
   try {
-    await requireRole([Role.OWNER, Role.ADMIN]);
+    await requireRoleApi([Role.OWNER, Role.ADMIN]);
     const listKontrak = await prisma.kontrak.findMany({
       include: {
         kamar: { select: { nomor_kamar: true, tipe: true, harga_sewa: true } },
@@ -18,13 +18,16 @@ export async function GET() {
 
     return NextResponse.json(listKontrak);
   } catch (error: any) {
+    if (error instanceof ApiAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
     return NextResponse.json({ error: error.message || 'Unauthorized' }, { status: 401 });
   }
 }
 
 export async function POST(req: NextRequest) {
   try {
-    await requireRole([Role.OWNER, Role.ADMIN]);
+    await requireRoleApi([Role.OWNER, Role.ADMIN]);
     const {
       kamar_id,
       penghuni_id,
@@ -107,6 +110,9 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(result, { status: 201 });
   } catch (error: any) {
+    if (error instanceof ApiAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
     console.error('Create kontrak error:', error);
     return NextResponse.json({ error: error.message || 'Gagal membuat kontrak sewa' }, { status: 500 });
   }

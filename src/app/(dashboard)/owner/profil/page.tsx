@@ -1,6 +1,6 @@
 import { requireRole } from '@/lib/rbac';
 import { Role } from '@prisma/client';
-import { User, Mail, Shield, KeyRound, LogOut } from 'lucide-react';
+import { User, Edit3, KeyRound, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 
 export default async function OwnerProfilPage() {
@@ -23,22 +23,38 @@ export default async function OwnerProfilPage() {
       </div>
 
       {/* Menu Options */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm divide-y divide-slate-100 text-xs font-semibold text-slate-700">
-        <div className="p-4 flex items-center gap-3">
-          <User className="w-4 h-4 text-blue-600" />
-          <div className="flex-1">
-            <p className="text-slate-900">Data Pribadi Pengelola</p>
-            <p className="text-[11px] text-slate-400 font-normal">Nama, email terdaftar</p>
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm divide-y divide-slate-100 text-xs font-semibold text-slate-700 overflow-hidden">
+        <Link
+          href="/owner/profil/edit"
+          className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-blue-50 text-blue-600">
+              <Edit3 className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="text-slate-900">Edit Profil & Data Pengelola</p>
+              <p className="text-[11px] text-slate-400 font-normal">Nama, email terdaftar</p>
+            </div>
           </div>
-        </div>
+          <ChevronRight className="w-4 h-4 text-slate-400" />
+        </Link>
 
-        <div className="p-4 flex items-center gap-3">
-          <KeyRound className="w-4 h-4 text-blue-600" />
-          <div className="flex-1">
-            <p className="text-slate-900">Keamanan & Password</p>
-            <p className="text-[11px] text-slate-400 font-normal">Ganti kata sandi akun</p>
+        <Link
+          href="/owner/profil/password"
+          className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-amber-50 text-amber-600">
+              <KeyRound className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="text-slate-900">Keamanan & Password</p>
+              <p className="text-[11px] text-slate-400 font-normal">Ganti kata sandi akun pengelola</p>
+            </div>
           </div>
-        </div>
+          <ChevronRight className="w-4 h-4 text-slate-400" />
+        </Link>
       </div>
     </div>
   );

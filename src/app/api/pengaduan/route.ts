@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { requireAuth, requireRole } from '@/lib/rbac';
+import { ApiAuthError, requireAuthApi, requireRoleApi } from '@/lib/rbac';
 import { Role, StatusPengaduan } from '@prisma/client';
 import { uploadFile } from '@/lib/r2';
+import { createNotifikasi, createNotifikasiOwnerAdmin } from '@/lib/notifikasi';
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await requireAuth();
+    const session = await requireAuthApi();
     const { searchParams } = new URL(req.url);
     const status = searchParams.get('status') as StatusPengaduan | null;
 
@@ -34,6 +35,9 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(listPengaduan);
   } catch (error: any) {
+    if (error instanceof ApiAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
     return NextResponse.json({ error: error.message || 'Unauthorized' }, { status: 401 });
   }
 }
@@ -41,7 +45,7 @@ export async function GET(req: NextRequest) {
 // Submit Complaint by Penghuni (Alur 6.3)
 export async function POST(req: NextRequest) {
   try {
-    const session = await requireAuth();
+    const session = await requireAuthApi();
     const formData = await req.formData();
 
     const kategori = (formData.get('kategori') as string) || 'Fasilitas Kamar';
@@ -57,7 +61,7 @@ export async function POST(req: NextRequest) {
       include: {
         kontrak: {
           where: { status: 'AKTIF' },
-          select: { kamar_id: true },
+          select: { kamar_id: true, kamar: { select: { nomor_kamar: true } } },
           take: 1,
         },
       },
@@ -68,6 +72,7 @@ export async function POST(req: NextRequest) {
     }
 
     const kamar_id = penghuni.kontrak[0].kamar_id;
+    const nomorKamar = penghuni.kontrak[0].kamar.nomor_kamar;
 
     // Upload photos if present
     const fotoUrls: string[] = [];
@@ -90,8 +95,18 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    // Notify Owner / Admin
+    await createNotifikasiOwnerAdmin({
+      judul: 'Komplain Baru Masuk',
+      pesan: `Penghuni ${penghuni.nama} (Kamar ${nomorKamar}) mengajukan komplain kategori ${kategori}.`,
+      tipe: 'PENGADUAN',
+    });
+
     return NextResponse.json(newPengaduan, { status: 201 });
   } catch (error: any) {
+    if (error instanceof ApiAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
     console.error('Submit pengaduan error:', error);
     return NextResponse.json({ error: error.message || 'Gagal mengajukan komplain' }, { status: 500 });
   }
@@ -100,7 +115,7 @@ export async function POST(req: NextRequest) {
 // Update Status & Internal Notes by Admin (Alur 6.3 Step 4)
 export async function PUT(req: NextRequest) {
   try {
-    await requireRole([Role.OWNER, Role.ADMIN]);
+    await requireRoleApi([Role.OWNER, Role.ADMIN]);
     const { id, status, catatan_internal } = await req.json();
 
     if (!id || !status) {
@@ -114,10 +129,27 @@ export async function PUT(req: NextRequest) {
         ...(catatan_internal !== undefined && { catatan_internal }),
         ...(status === StatusPengaduan.SELESAI && { resolved_at: new Date() }),
       },
+      include: {
+        penghuni: { select: { user_id: true } },
+        kamar: { select: { nomor_kamar: true } },
+      },
     });
+
+    // Notify Penghuni if linked user exists
+    if (updated.penghuni.user_id) {
+      await createNotifikasi({
+        user_id: updated.penghuni.user_id,
+        judul: `Status Komplain: ${status}`,
+        pesan: `Komplain Anda mengenai Kamar ${updated.kamar.nomor_kamar} telah diperbarui menjadi ${status}.`,
+        tipe: 'PENGADUAN',
+      });
+    }
 
     return NextResponse.json(updated);
   } catch (error: any) {
+    if (error instanceof ApiAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
     return NextResponse.json({ error: error.message || 'Gagal mengupdate komplain' }, { status: 500 });
   }
 }

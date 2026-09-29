@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { requireAuth, requireRole } from '@/lib/rbac';
+import { ApiAuthError, requireAuthApi, requireRoleApi } from '@/lib/rbac';
 import { Role, StatusTagihan, StatusVerifikasi } from '@prisma/client';
 import { uploadFile } from '@/lib/r2';
 import { sendWhatsAppMessage } from '@/lib/fonnte';
+import { createNotifikasi, createNotifikasiOwnerAdmin } from '@/lib/notifikasi';
 
 export async function GET() {
   try {
-    await requireRole([Role.OWNER, Role.ADMIN]);
+    await requireRoleApi([Role.OWNER, Role.ADMIN]);
     const listPembayaran = await prisma.pembayaran.findMany({
       include: {
         tagihan: {
@@ -26,14 +27,17 @@ export async function GET() {
 
     return NextResponse.json(listPembayaran);
   } catch (error: any) {
-    return NextResponse.json({ error: error.message || 'Unauthorized' }, { status: 401 });
+    if (error instanceof ApiAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
+    return NextResponse.json({ error: error.message || 'Terjadi kesalahan' }, { status: 500 });
   }
 }
 
 // Upload proof of payment by Penghuni
 export async function POST(req: NextRequest) {
   try {
-    const session = await requireAuth();
+    const session = await requireAuthApi();
     const formData = await req.formData();
 
     const tagihan_id = formData.get('tagihan_id') as string;
@@ -54,6 +58,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Tagihan tidak ditemukan' }, { status: 404 });
     }
 
+    // IDOR Protection: Verify tenant owns this bill
+    if (session.role === Role.PENGHUNI) {
+      if (tagihan.kontrak.penghuni.user_id !== session.id) {
+        throw new ApiAuthError('Anda tidak memiliki akses untuk membayar tagihan ini', 403);
+      }
+    }
+
     // Upload to Cloudflare R2 (or local fallback)
     const fileBuffer = Buffer.from(await file.arrayBuffer());
     const buktiUrl = await uploadFile(fileBuffer, file.name, file.type);
@@ -68,8 +79,18 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    // Send In-App Notification to Owner/Admin
+    await createNotifikasiOwnerAdmin({
+      judul: 'Pembayaran Baru Perlu Verifikasi',
+      pesan: `Penghuni ${tagihan.kontrak.penghuni.nama} (Kamar ${tagihan.kontrak.kamar.nomor_kamar}) telah mengunggah bukti pembayaran periode ${tagihan.periode}.`,
+      tipe: 'PEMBAYARAN',
+    });
+
     return NextResponse.json(pembayaran, { status: 201 });
   } catch (error: any) {
+    if (error instanceof ApiAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
     console.error('Upload pembayaran error:', error);
     return NextResponse.json({ error: error.message || 'Gagal mengirim bukti pembayaran' }, { status: 500 });
   }
@@ -78,7 +99,7 @@ export async function POST(req: NextRequest) {
 // Verification by Admin (Approve / Reject)
 export async function PUT(req: NextRequest) {
   try {
-    await requireRole([Role.OWNER, Role.ADMIN]);
+    await requireRoleApi([Role.OWNER, Role.ADMIN]);
     const { id, status_verifikasi } = await req.json();
 
     if (!id || !status_verifikasi) {
@@ -115,8 +136,21 @@ export async function PUT(req: NextRequest) {
 
     await sendWhatsAppMessage({ target: phone, message: waMsg });
 
+    // Send In-App Notification to Penghuni if user_id linked
+    if (result.tagihan.kontrak.penghuni.user_id) {
+      await createNotifikasi({
+        user_id: result.tagihan.kontrak.penghuni.user_id,
+        judul: `Pembayaran ${statusText}`,
+        pesan: `Pembayaran Anda untuk periode ${result.tagihan.periode} telah ${statusText.toLowerCase()} oleh pengelola.`,
+        tipe: 'PEMBAYARAN',
+      });
+    }
+
     return NextResponse.json(result);
   } catch (error: any) {
+    if (error instanceof ApiAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
     return NextResponse.json({ error: error.message || 'Gagal memverifikasi pembayaran' }, { status: 500 });
   }
 }

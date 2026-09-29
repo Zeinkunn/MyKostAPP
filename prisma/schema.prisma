@@ -57,6 +57,7 @@ model User {
   properti     Properti[]
   penghuni     Penghuni?
   logAktivitas LogAktivitas[]
+  notifikasi   Notifikasi[]
 }
 
 model Properti {
@@ -171,3 +172,15 @@ model Pengaturan {
   wa_template    String   @default("Halo Sdr/i {NAMA}, Tagihan sewa kamar {KAMAR} periode {PERIODE} sebesar {JUMLAH} akan jatuh tempo pada {JATUH_TEMPO}.") @db.Text
   updated_at     DateTime @updatedAt
 }
+
+model Notifikasi {
+  id         String   @id @default(cuid())
+  user_id    String
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  judul      String
+  pesan      String
+  tipe       String   @default("UMUM")
+  dibaca     Boolean  @default(false)
+  created_at DateTime @default(now())
+}
+

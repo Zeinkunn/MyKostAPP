@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { requireAuth, requireRole } from '@/lib/rbac';
+import { ApiAuthError, requireAuthApi, requireRoleApi } from '@/lib/rbac';
 import { Role, StatusTagihan } from '@prisma/client';
+import { createNotifikasi } from '@/lib/notifikasi';
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await requireAuth();
+    const session = await requireAuthApi();
     const { searchParams } = new URL(req.url);
     const status = searchParams.get('status') as StatusTagihan | null;
 
@@ -46,6 +47,9 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(listTagihan);
   } catch (error: any) {
+    if (error instanceof ApiAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
     return NextResponse.json({ error: error.message || 'Unauthorized' }, { status: 401 });
   }
 }
@@ -53,10 +57,14 @@ export async function GET(req: NextRequest) {
 // Generate monthly bills for all active contracts (Cron / Manual trigger by admin)
 export async function POST() {
   try {
-    await requireRole([Role.OWNER, Role.ADMIN]);
+    await requireRoleApi([Role.OWNER, Role.ADMIN]);
 
     const activeContracts = await prisma.kontrak.findMany({
       where: { status: 'AKTIF' },
+      include: {
+        penghuni: { select: { user_id: true } },
+        kamar: { select: { nomor_kamar: true } },
+      },
     });
 
     const now = new Date();
@@ -89,6 +97,16 @@ export async function POST() {
           },
         });
         generatedCount++;
+
+        // Send in-app notification if user is linked
+        if (kontrak.penghuni.user_id) {
+          await createNotifikasi({
+            user_id: kontrak.penghuni.user_id,
+            judul: 'Tagihan Sewa Baru',
+            pesan: `Tagihan sewa Kamar ${kontrak.kamar.nomor_kamar} periode ${periode} telah terbit.`,
+            tipe: 'TAGIHAN',
+          });
+        }
       }
     }
 
@@ -98,6 +116,9 @@ export async function POST() {
       generatedCount,
     });
   } catch (error: any) {
+    if (error instanceof ApiAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
     return NextResponse.json({ error: error.message || 'Gagal generate tagihan' }, { status: 500 });
   }
 }

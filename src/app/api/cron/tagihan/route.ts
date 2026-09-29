@@ -6,6 +6,14 @@ import { formatDateIndonesian, formatRupiah } from '@/lib/utils';
 
 export async function GET(req: NextRequest) {
   try {
+    const authHeader = req.headers.get('authorization');
+    const cronSecret = process.env.CRON_SECRET;
+    
+    // Validate CRON_SECRET authorization header
+    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const now = new Date();
 
     // Fetch dynamic settings (late fee rate & template) from Supabase

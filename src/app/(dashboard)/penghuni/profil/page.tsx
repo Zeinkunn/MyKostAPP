@@ -1,7 +1,7 @@
 import { requireRole } from '@/lib/rbac';
 import { Role } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
-import { User, FileText, KeyRound, HelpCircle, LogOut, ChevronRight } from 'lucide-react';
+import { User, FileText, KeyRound, HelpCircle, ChevronRight, Edit3 } from 'lucide-react';
 import Link from 'next/link';
 
 export default async function PenghuniProfilPage() {
@@ -40,13 +40,47 @@ export default async function PenghuniProfilPage() {
 
       {/* Navigation List */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm divide-y divide-slate-100 text-xs font-semibold text-slate-700 overflow-hidden">
+        {/* Edit Profil */}
+        <Link
+          href="/penghuni/profil/edit"
+          className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-blue-50 text-blue-600">
+              <Edit3 className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="text-slate-900">Edit Profil & Data Diri</p>
+              <p className="text-[11px] text-slate-400 font-normal">Ubah nama & email terdaftar</p>
+            </div>
+          </div>
+          <ChevronRight className="w-4 h-4 text-slate-400" />
+        </Link>
+
+        {/* Change Password */}
+        <Link
+          href="/penghuni/profil/password"
+          className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-amber-50 text-amber-600">
+              <KeyRound className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="text-slate-900">Ubah Kata Sandi</p>
+              <p className="text-[11px] text-slate-400 font-normal">Ganti password akun MyKost Anda</p>
+            </div>
+          </div>
+          <ChevronRight className="w-4 h-4 text-slate-400" />
+        </Link>
+
         {/* Detail Kontrak Sub-Menu */}
         <Link
           href="/penghuni/profil/kontrak"
           className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors"
         >
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-blue-50 text-blue-600">
+            <div className="p-2 rounded-xl bg-emerald-50 text-emerald-600">
               <FileText className="w-4 h-4" />
             </div>
             <div>
@@ -63,20 +97,8 @@ export default async function PenghuniProfilPage() {
               <User className="w-4 h-4" />
             </div>
             <div>
-              <p className="text-slate-900">Data Pribadi</p>
-              <p className="text-[11px] text-slate-400 font-normal">KTP: {penghuni?.no_ktp || '-'}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-slate-100 text-slate-600">
-              <HelpCircle className="w-4 h-4" />
-            </div>
-            <div>
-              <p className="text-slate-900">Pusat Bantuan & Kontak Admin</p>
-              <p className="text-[11px] text-slate-400 font-normal">Hubungi pengelola via WhatsApp</p>
+              <p className="text-slate-900">Data KTP Penghuni</p>
+              <p className="text-[11px] text-slate-400 font-normal">No. KTP: {penghuni?.no_ktp || '-'}</p>
             </div>
           </div>
         </div>

@@ -1,8 +1,9 @@
 import { requireRole } from '@/lib/rbac';
 import { prisma } from '@/lib/prisma';
 import { Role } from '@prisma/client';
-import { BarChart3, TrendingUp, AlertTriangle, Printer } from 'lucide-react';
+import { TrendingUp, AlertTriangle } from 'lucide-react';
 import { formatRupiah, formatDateIndonesian } from '@/lib/utils';
+import ExportExcelButton from '@/components/ExportExcelButton';
 
 export default async function OwnerLaporanPage() {
   await requireRole([Role.OWNER, Role.ADMIN]);
@@ -42,10 +43,21 @@ export default async function OwnerLaporanPage() {
 
   const totalUnpaid = unpaidBills.reduce((acc, curr) => acc + Number(curr.jumlah) + Number(curr.denda), 0);
 
+  const serializedPayments = approvedPayments.map((p) => ({
+    ...p,
+    jumlah_dibayar: Number(p.jumlah_dibayar),
+  }));
+
+  const serializedUnpaid = unpaidBills.map((b) => ({
+    ...b,
+    jumlah: Number(b.jumlah),
+    denda: Number(b.denda),
+  }));
+
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-xl md:text-2xl font-bold text-slate-900">Laporan Keuangan & Pendapatan</h1>
           <p className="text-xs md:text-sm text-slate-500">
@@ -53,13 +65,10 @@ export default async function OwnerLaporanPage() {
           </p>
         </div>
 
-        <button
-          onClick={() => {}}
-          className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs rounded-xl shadow-sm transition-all flex items-center gap-2"
-        >
-          <Printer className="w-4 h-4" />
-          <span>Cetak Laporan</span>
-        </button>
+        <ExportExcelButton
+          approvedPayments={serializedPayments}
+          unpaidBills={serializedUnpaid}
+        />
       </div>
 
       {/* Metric Cards */}

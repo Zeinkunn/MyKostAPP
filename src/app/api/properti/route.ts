@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { requireRole } from '@/lib/rbac';
+import { ApiAuthError, requireRoleApi } from '@/lib/rbac';
 import { Role } from '@prisma/client';
 
 export async function GET() {
   try {
-    const session = await requireRole([Role.OWNER, Role.ADMIN]);
+    const session = await requireRoleApi([Role.OWNER, Role.ADMIN]);
     const propertiList = await prisma.properti.findMany({
       include: {
         _count: {
@@ -16,13 +16,16 @@ export async function GET() {
     });
     return NextResponse.json(propertiList);
   } catch (error: any) {
+    if (error instanceof ApiAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
     return NextResponse.json({ error: error.message || 'Unauthorized' }, { status: 401 });
   }
 }
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await requireRole([Role.OWNER, Role.ADMIN]);
+    const session = await requireRoleApi([Role.OWNER, Role.ADMIN]);
     const { nama, alamat } = await req.json();
 
     if (!nama || !alamat) {
@@ -39,6 +42,9 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(newProperti, { status: 201 });
   } catch (error: any) {
+    if (error instanceof ApiAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
     return NextResponse.json({ error: error.message || 'Terjadi kesalahan' }, { status: 500 });
   }
 }

@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { requireRole } from '@/lib/rbac';
+import { ApiAuthError, requireAuthApi, requireRoleApi } from '@/lib/rbac';
 import { Role, StatusKamar } from '@prisma/client';
 
 export async function GET(req: NextRequest) {
   try {
+    const session = await requireAuthApi();
     const { searchParams } = new URL(req.url);
     const properti_id = searchParams.get('properti_id');
     const status = searchParams.get('status') as StatusKamar | null;
@@ -26,15 +27,34 @@ export async function GET(req: NextRequest) {
       orderBy: { nomor_kamar: 'asc' },
     });
 
+    if (session.role === Role.PENGHUNI) {
+      const sanitized = kamarList.map((kamar) => ({
+        ...kamar,
+        kontrak: kamar.kontrak.map((k) => ({
+          ...k,
+          penghuni: k.penghuni
+            ? {
+                nama: k.penghuni.nama,
+                no_hp: '', // Hide no_hp for other tenants
+              }
+            : null,
+        })),
+      }));
+      return NextResponse.json(sanitized);
+    }
+
     return NextResponse.json(kamarList);
   } catch (error: any) {
-    return NextResponse.json({ error: error.message || 'Unauthorized' }, { status: 401 });
+    if (error instanceof ApiAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
+    return NextResponse.json({ error: error.message || 'Terjadi kesalahan' }, { status: 500 });
   }
 }
 
 export async function POST(req: NextRequest) {
   try {
-    await requireRole([Role.OWNER, Role.ADMIN]);
+    await requireRoleApi([Role.OWNER, Role.ADMIN]);
     const { properti_id, nomor_kamar, tipe, harga_sewa, fasilitas, status, foto_url } = await req.json();
 
     if (!properti_id || !nomor_kamar || !tipe || !harga_sewa) {
@@ -55,13 +75,16 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(newKamar, { status: 201 });
   } catch (error: any) {
+    if (error instanceof ApiAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
     return NextResponse.json({ error: error.message || 'Terjadi kesalahan' }, { status: 500 });
   }
 }
 
 export async function PUT(req: NextRequest) {
   try {
-    await requireRole([Role.OWNER, Role.ADMIN]);
+    await requireRoleApi([Role.OWNER, Role.ADMIN]);
     const { id, nomor_kamar, tipe, harga_sewa, fasilitas, status, foto_url } = await req.json();
 
     if (!id) {
@@ -82,6 +105,9 @@ export async function PUT(req: NextRequest) {
 
     return NextResponse.json(updatedKamar);
   } catch (error: any) {
+    if (error instanceof ApiAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
     return NextResponse.json({ error: error.message || 'Gagal mengupdate kamar' }, { status: 500 });
   }
 }

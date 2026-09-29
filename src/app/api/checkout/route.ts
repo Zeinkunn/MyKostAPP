@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { requireRole } from '@/lib/rbac';
+import { ApiAuthError, requireRoleApi } from '@/lib/rbac';
 import { Role, StatusKamar, StatusKontrak } from '@prisma/client';
 import { sendWhatsAppMessage } from '@/lib/fonnte';
 
 export async function POST(req: NextRequest) {
   try {
-    await requireRole([Role.OWNER, Role.ADMIN]);
+    await requireRoleApi([Role.OWNER, Role.ADMIN]);
     const { kontrak_id, potongan_deposit, catatan_potongan } = await req.json();
 
     if (!kontrak_id) {
@@ -70,6 +70,9 @@ export async function POST(req: NextRequest) {
       result,
     });
   } catch (error: any) {
+    if (error instanceof ApiAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
     console.error('Checkout error:', error);
     return NextResponse.json({ error: error.message || 'Gagal memproses checkout' }, { status: 500 });
   }

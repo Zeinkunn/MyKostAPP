@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { requireRole } from '@/lib/rbac';
+import { ApiAuthError, requireRoleApi } from '@/lib/rbac';
 import { Role } from '@prisma/client';
 
 export async function GET() {
   try {
-    await requireRole([Role.OWNER, Role.ADMIN]);
+    await requireRoleApi([Role.OWNER, Role.ADMIN]);
     const listPenghuni = await prisma.penghuni.findMany({
       include: {
         kontrak: {
@@ -19,13 +19,16 @@ export async function GET() {
 
     return NextResponse.json(listPenghuni);
   } catch (error: any) {
+    if (error instanceof ApiAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
     return NextResponse.json({ error: error.message || 'Unauthorized' }, { status: 401 });
   }
 }
 
 export async function POST(req: NextRequest) {
   try {
-    await requireRole([Role.OWNER, Role.ADMIN]);
+    await requireRoleApi([Role.OWNER, Role.ADMIN]);
     const { nama, no_ktp, no_hp, email, foto_ktp_url } = await req.json();
 
     if (!nama || !no_ktp || !no_hp || !email) {
@@ -59,6 +62,9 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(newPenghuni, { status: 201 });
   } catch (error: any) {
+    if (error instanceof ApiAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
     return NextResponse.json({ error: error.message || 'Terjadi kesalahan' }, { status: 500 });
   }
 }

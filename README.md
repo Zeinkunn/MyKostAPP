@@ -78,6 +78,9 @@ R2_PUBLIC_DOMAIN="https://domain-public-r2-anda.dev"
 
 # Fonnte WhatsApp API Token
 FONNTE_API_TOKEN="token-fonnte-wa-anda"
+
+# Cron Secret Token
+CRON_SECRET="secret-token-untuk-endpoint-cron"
 ```
 
 ### 4. Push Database Schema & Seed Data
