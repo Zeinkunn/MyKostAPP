@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+
+<html lang="id"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_stack" name="shell-type"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "surface-container": "#ebedf7", "surface-variant": "#e0e2eb", "primary-container": "#0a73e0", "secondary-container": "#b6d0ff", "surface-container-highest": "#e0e2eb", "primary-fixed-dim": "#aac7ff", "on-primary-fixed-variant": "#00458d", "on-primary-fixed": "#001b3e", "surface-container-low": "#f1f3fc", "secondary-fixed-dim": "#aec7f7", "background": "#f9f9ff", "error": "#ba1a1a", "on-tertiary-fixed": "#321200", "inverse-primary": "#aac7ff", "surface": "#f9f9ff", "outline": "#717785", "on-tertiary-fixed-variant": "#763400", "inverse-on-surface": "#eef0fa", "secondary": "#465f88", "tertiary": "#964400", "inverse-surface": "#2d3037", "on-primary-container": "#fefcff", "on-surface": "#181c22", "on-error": "#ffffff", "surface-container-lowest": "#ffffff", "error-container": "#ffdad6", "on-error-container": "#93000a", "tertiary-fixed-dim": "#ffb68c", "tertiary-fixed": "#ffdbc9", "primary-fixed": "#d6e3ff", "surface-dim": "#d7dae3", "on-secondary-fixed": "#001b3d", "primary": "#005ab4", "outline-variant": "#c1c6d5", "on-primary": "#ffffff", "tertiary-container": "#bd5700", "surface-bright": "#f9f9ff", "surface-container-high": "#e6e8f1", "on-tertiary": "#ffffff", "surface-tint": "#005db8", "on-secondary-container": "#3f5881", "on-tertiary-container": "#fffbff", "on-secondary-fixed-variant": "#2d476f", "secondary-fixed": "#d6e3ff", "on-secondary": "#ffffff", "on-background": "#181c22", "on-surface-variant": "#414753" }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, spacing: {}, fontFamily: { "headline": ["Inter"], "display": ["Inter"], "body": ["Inter"], "label": ["Inter"] }, fontSize: {} } } }</script><style>@layer base { html, body { width: 100vw; margin: 0; padding: 0; } body { overscroll-behavior-y: none; } .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); } .pt-safe { padding-top: env(safe-area-inset-top, 0px); } main > :first-child { margin-top: 0 !important; } main > :last-child { margin-bottom: 0 !important; } } ::-webkit-scrollbar { display: none; }</style></head><body class="bg-surface font-body text-on-surface antialiased flex flex-col min-h-screen"><header class="fixed top-0 w-full z-50 bg-surface/90 backdrop-blur-xl pt-safe shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-16 px-4 flex items-center justify-between"><button aria-label="Kembali" class="w-11 h-11 flex items-center justify-center rounded-full text-on-surface hover:bg-surface-container-high/60 transition-colors" onclick="history.back()" type="button"><span class="material-symbols-outlined text-[24px]">arrow_back</span></button><h1 class="text-base font-headline font-semibold text-on-surface text-center flex-1 truncate px-2">Ganti Password</h1><div class="flex items-center gap-1"><div class="w-11 h-11 flex items-center justify-center text-primary"><span class="material-symbols-outlined text-[24px]">security</span></div><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="flex flex-col relative w-full pt-16 pb-safe bg-surface min-h-screen"><div class="flex flex-col w-full pb-10">
+<!-- Dynamic Atmospheric Glow -->
+<div class="relative w-full px-4 pt-3 pb-6 flex flex-col gap-5">
+<!-- Top Security Banner -->
+<div class="relative overflow-hidden rounded-xl bg-surface-container-low p-4 shadow-sm flex items-start gap-3.5">
+<div class="absolute -right-6 -bottom-6 w-24 h-24 bg-primary/5 rounded-full pointer-events-none"></div>
+<div class="w-10 h-10 rounded-xl bg-primary-fixed flex items-center justify-center flex-shrink-0 text-on-primary-fixed shadow-sm">
+<span class="material-symbols-outlined text-[22px]" style="font-variation-settings: 'FILL' 1;">shield_person</span>
+</div>
+<div class="flex flex-col flex-1 min-w-0">
+<div class="flex items-center gap-1.5 mb-1">
+<span class="text-xs font-semibold text-primary uppercase tracking-wider">Perlindungan Akun</span>
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+<span class="text-[11px] text-on-surface-variant font-medium">Owner &amp; Admin</span>
+</div>
+<p class="text-xs leading-relaxed text-on-surface-variant font-normal">
+          Gunakan kombinasi kata sandi yang kuat untuk melindungi data properti, mutasi rekening, dan akses kontrol pintu cerdas penghuni kost.
+        </p>
+</div>
+</div>
+<!-- Main Card Form Container -->
+<form class="flex flex-col gap-5" id="password-form" onsubmit="event.preventDefault(); handleFormSubmit();">
+<!-- Input Group 1: Password Saat Ini -->
+<div class="bg-surface-container-lowest rounded-xl p-4 shadow-sm flex flex-col gap-2">
+<div class="flex items-center justify-between">
+<label class="text-xs font-semibold text-on-surface flex items-center gap-1" for="old-password">
+            Kata Sandi Saat Ini
+            <span class="text-error font-bold">*</span>
+</label>
+<span class="text-[11px] text-outline font-medium">Wajib diisi</span>
+</div>
+<div class="relative flex items-center">
+<div class="absolute left-3.5 text-secondary flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-[20px]">lock</span>
+</div>
+<input autocomplete="current-password" class="w-full h-12 pl-11 pr-11 bg-surface-container-lowest text-on-surface text-sm rounded-lg focus:outline-none focus:bg-surface-container-low transition-all placeholder:text-outline" id="old-password" placeholder="Masukkan kata sandi lama" required="" type="password"/>
+<button aria-label="Tampilkan atau sembunyikan kata sandi saat ini" class="absolute right-2 w-9 h-9 flex items-center justify-center rounded-lg text-secondary hover:bg-surface-container transition-colors" onclick="toggleVisibility('old-password', 'old-eye-icon')" type="button">
+<span class="material-symbols-outlined text-[20px]" id="old-eye-icon">visibility</span>
+</button>
+</div>
+<div class="flex justify-end pt-1">
+<a class="text-xs font-medium text-primary hover:text-on-primary-fixed-variant transition-colors flex items-center gap-1" href="javascript:void(0)">
+<span>Lupa kata sandi lama?</span>
+<span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+</a>
+</div>
+</div>
+<!-- Password Section Group (New & Confirm) -->
+<div class="bg-surface-container-lowest rounded-xl p-4 shadow-sm flex flex-col gap-4">
+<!-- Input Group 2: Password Baru -->
+<div class="flex flex-col gap-2">
+<label class="text-xs font-semibold text-on-surface flex items-center gap-1" for="new-password">
+            Kata Sandi Baru
+            <span class="text-error font-bold">*</span>
+</label>
+<div class="relative flex items-center">
+<div class="absolute left-3.5 text-secondary flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-[20px]">key</span>
+</div>
+<input autocomplete="new-password" class="w-full h-12 pl-11 pr-11 bg-surface-container-lowest text-on-surface text-sm rounded-lg focus:outline-none focus:bg-surface-container-low transition-all placeholder:text-outline" id="new-password" oninput="evaluatePassword(this.value)" placeholder="Buat kata sandi baru" required="" type="password"/>
+<button aria-label="Tampilkan atau sembunyikan kata sandi baru" class="absolute right-2 w-9 h-9 flex items-center justify-center rounded-lg text-secondary hover:bg-surface-container transition-colors" onclick="toggleVisibility('new-password', 'new-eye-icon')" type="button">
+<span class="material-symbols-outlined text-[20px]" id="new-eye-icon">visibility</span>
+</button>
+</div>
+</div>
+<!-- Password Strength Meter Visual -->
+<div class="flex flex-col gap-1.5 pt-1">
+<div class="flex items-center justify-between text-xs">
+<span class="text-on-surface-variant font-medium">Kekuatan Sandi:</span>
+<span class="font-semibold text-primary" id="strength-label">Cukup Kuat</span>
+</div>
+<div class="w-full h-1.5 bg-surface-container-high rounded-full overflow-hidden flex gap-1">
+<div class="h-full w-1/4 bg-primary transition-all duration-300 rounded-full" id="bar-1"></div>
+<div class="h-full w-1/4 bg-primary transition-all duration-300 rounded-full" id="bar-2"></div>
+<div class="h-full w-1/4 bg-primary transition-all duration-300 rounded-full" id="bar-3"></div>
+<div class="h-full w-1/4 bg-surface-variant transition-all duration-300 rounded-full" id="bar-4"></div>
+</div>
+</div>
+<!-- Divider Space -->
+<div class="h-px bg-surface-container w-full my-1"></div>
+<!-- Input Group 3: Konfirmasi Password Baru -->
+<div class="flex flex-col gap-2">
+<label class="text-xs font-semibold text-on-surface flex items-center gap-1" for="confirm-password">
+            Konfirmasi Kata Sandi Baru
+            <span class="text-error font-bold">*</span>
+</label>
+<div class="relative flex items-center">
+<div class="absolute left-3.5 text-secondary flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-[20px]">verified_user</span>
+</div>
+<input autocomplete="new-password" class="w-full h-12 pl-11 pr-11 bg-surface-container-lowest text-on-surface text-sm rounded-lg focus:outline-none focus:bg-surface-container-low transition-all placeholder:text-outline" id="confirm-password" oninput="checkMatch()" placeholder="Ulangi kata sandi baru" required="" type="password"/>
+<button aria-label="Tampilkan atau sembunyikan konfirmasi kata sandi" class="absolute right-2 w-9 h-9 flex items-center justify-center rounded-lg text-secondary hover:bg-surface-container transition-colors" onclick="toggleVisibility('confirm-password', 'confirm-eye-icon')" type="button">
+<span class="material-symbols-outlined text-[20px]" id="confirm-eye-icon">visibility</span>
+</button>
+</div>
+<div class="text-[11px] font-medium text-outline flex items-center gap-1 mt-0.5" id="match-status">
+<span class="material-symbols-outlined text-[14px]">info</span>
+<span>Pastikan kata sandi cocok sama persis</span>
+</div>
+</div>
+</div>
+<!-- Password Requirements Checklist Card -->
+<div class="bg-surface-container-low rounded-xl p-4 shadow-sm flex flex-col gap-3">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[18px]">checklist</span>
+<span class="text-xs font-bold text-on-surface uppercase tracking-wide">Kriteria Keamanan M-KOST</span>
+</div>
+<ul class="flex flex-col gap-2 text-xs">
+<!-- Requirement 1 -->
+<li class="flex items-center gap-2.5 text-on-surface font-medium transition-colors" id="req-len">
+<div class="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center flex-shrink-0 transition-colors" id="icon-len-bg">
+<span class="material-symbols-outlined text-[14px]" id="icon-len">check</span>
+</div>
+<span class="flex-1">Minimal 8 karakter</span>
+</li>
+<!-- Requirement 2 -->
+<li class="flex items-center gap-2.5 text-on-surface font-medium transition-colors" id="req-case">
+<div class="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center flex-shrink-0 transition-colors" id="icon-case-bg">
+<span class="material-symbols-outlined text-[14px]" id="icon-case">check</span>
+</div>
+<span class="flex-1">Kombinasi huruf besar &amp; kecil (A-Z, a-z)</span>
+</li>
+<!-- Requirement 3 -->
+<li class="flex items-center gap-2.5 text-on-surface font-medium transition-colors" id="req-num">
+<div class="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center flex-shrink-0 transition-colors" id="icon-num-bg">
+<span class="material-symbols-outlined text-[14px]" id="icon-num">check</span>
+</div>
+<span class="flex-1">Minimal 1 karakter angka (0-9)</span>
+</li>
+<!-- Requirement 4 -->
+<li class="flex items-center gap-2.5 text-outline font-medium transition-colors" id="req-sym">
+<div class="w-5 h-5 rounded-full bg-surface-container-high text-outline flex items-center justify-center flex-shrink-0 transition-colors" id="icon-sym-bg">
+<span class="material-symbols-outlined text-[14px]" id="icon-sym">remove</span>
+</div>
+<span class="flex-1">Minimal 1 simbol khusus (!@#$%^&amp;*)</span>
+</li>
+</ul>
+</div>
+<!-- Action Buttons -->
+<div class="flex flex-col gap-3 pt-2">
+<!-- Primary Submit Button -->
+<button class="w-full h-12 bg-primary hover:bg-primary/95 active:scale-[0.99] text-on-primary font-semibold text-sm rounded-lg shadow-md flex items-center justify-center gap-2 transition-all" id="btn-submit" type="submit">
+<span class="material-symbols-outlined text-[20px]">lock_reset</span>
+<span>Simpan Kata Sandi Baru</span>
+</button>
+<!-- Secondary Button -->
+<button class="w-full h-11 bg-transparent hover:bg-surface-container-high/40 active:bg-surface-container text-on-surface-variant font-semibold text-sm rounded-lg flex items-center justify-center transition-colors" onclick="history.back()" type="button">
+<span>Batal</span>
+</button>
+</div>
+<!-- Security End-to-End Footnote -->
+<div class="flex items-center justify-center gap-1.5 text-[11px] text-outline pt-1 text-center">
+<span class="material-symbols-outlined text-[15px] text-primary" style="font-variation-settings: 'FILL' 1;">verified</span>
+<span>Dilindungi enkripsi end-to-end M-KOST Enterprise Security</span>
+</div>
+</form>
+</div>
+</div>
+<script>
+  function toggleVisibility(inputId, iconId) {
+    const input = document.getElementById(inputId);
+    const icon = document.getElementById(iconId);
+    if (!input || !icon) return;
+
+    if (input.type === 'password') {
+      input.type = 'text';
+      icon.textContent = 'visibility_off';
+    } else {
+      input.type = 'password';
+      icon.textContent = 'visibility';
+    }
+  }
+
+  function evaluatePassword(val) {
+    const hasLen = val.length >= 8;
+    const hasCase = /[A-Z]/.test(val) && /[a-z]/.test(val);
+    const hasNum = /[0-9]/.test(val);
+    const hasSym = /[^A-Za-z0-9]/.test(val);
+
+    updateCriterion('req-len', 'icon-len', 'icon-len-bg', hasLen);
+    updateCriterion('req-case', 'icon-case', 'icon-case-bg', hasCase);
+    updateCriterion('req-num', 'icon-num', 'icon-num-bg', hasNum);
+    updateCriterion('req-sym', 'icon-sym', 'icon-sym-bg', hasSym);
+
+    let score = 0;
+    if (hasLen) score++;
+    if (hasCase) score++;
+    if (hasNum) score++;
+    if (hasSym) score++;
+
+    const label = document.getElementById('strength-label');
+    const b1 = document.getElementById('bar-1');
+    const b2 = document.getElementById('bar-2');
+    const b3 = document.getElementById('bar-3');
+    const b4 = document.getElementById('bar-4');
+
+    b1.className = 'h-full w-1/4 rounded-full transition-all duration-300 ' + (score >= 1 ? 'bg-primary' : 'bg-surface-variant');
+    b2.className = 'h-full w-1/4 rounded-full transition-all duration-300 ' + (score >= 2 ? 'bg-primary' : 'bg-surface-variant');
+    b3.className = 'h-full w-1/4 rounded-full transition-all duration-300 ' + (score >= 3 ? 'bg-primary' : 'bg-surface-variant');
+    b4.className = 'h-full w-1/4 rounded-full transition-all duration-300 ' + (score >= 4 ? 'bg-primary' : 'bg-surface-variant');
+
+    if (score === 0) {
+      label.textContent = 'Terlalu Pendek';
+      label.className = 'font-semibold text-outline';
+    } else if (score <= 2) {
+      label.textContent = 'Kurang Kuat';
+      label.className = 'font-semibold text-secondary';
+    } else if (score === 3) {
+      label.textContent = 'Cukup Kuat';
+      label.className = 'font-semibold text-primary';
+    } else {
+      label.textContent = 'Sangat Kuat';
+      label.className = 'font-semibold text-primary';
+    }
+
+    checkMatch();
+  }
+
+  function updateCriterion(elemId, iconId, bgId, valid) {
+    const elem = document.getElementById(elemId);
+    const icon = document.getElementById(iconId);
+    const bg = document.getElementById(bgId);
+    if (!elem || !icon || !bg) return;
+
+    if (valid) {
+      elem.classList.remove('text-outline');
+      elem.classList.add('text-on-surface');
+      bg.className = 'w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center flex-shrink-0 transition-colors';
+      icon.textContent = 'check';
+    } else {
+      elem.classList.remove('text-on-surface');
+      elem.classList.add('text-outline');
+      bg.className = 'w-5 h-5 rounded-full bg-surface-container-high text-outline flex items-center justify-center flex-shrink-0 transition-colors';
+      icon.textContent = 'remove';
+    }
+  }
+
+  function checkMatch() {
+    const p1 = document.getElementById('new-password').value;
+    const p2 = document.getElementById('confirm-password').value;
+    const status = document.getElementById('match-status');
+    if (!status) return;
+
+    if (!p2) {
+      status.innerHTML = '<span class="material-symbols-outlined text-[14px]">info</span><span>Pastikan kata sandi cocok sama persis</span>';
+      status.className = 'text-[11px] font-medium text-outline flex items-center gap-1 mt-0.5';
+      return;
+    }
+
+    if (p1 === p2) {
+      status.innerHTML = '<span class="material-symbols-outlined text-[14px] text-primary">check_circle</span><span class="text-primary">Kata sandi cocok</span>';
+      status.className = 'text-[11px] font-medium text-primary flex items-center gap-1 mt-0.5';
+    } else {
+      status.innerHTML = '<span class="material-symbols-outlined text-[14px] text-error">cancel</span><span class="text-error">Kata sandi belum sesuai</span>';
+      status.className = 'text-[11px] font-medium text-error flex items-center gap-1 mt-0.5';
+    }
+  }
+
+  function handleFormSubmit() {
+    const btn = document.getElementById('btn-submit');
+    if (!btn) return;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="material-symbols-outlined text-[18px] animate-spin">progress_activity</span><span>Memproses...</span>';
+    
+    setTimeout(() => {
+      btn.innerHTML = '<span class="material-symbols-outlined text-[20px]">check_circle</span><span>Kata Sandi Diperbarui!</span>';
+      btn.classList.add('bg-primary-container');
+      setTimeout(() => {
+        history.back();
+      }, 900);
+    }, 1000);
+  }
+</script></main></body></html>

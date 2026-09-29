@@ -1,0 +1,173 @@
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  OWNER
+  ADMIN
+  PENGHUNI
+}
+
+enum StatusKamar {
+  KOSONG
+  TERISI
+  BOOKING
+  MAINTENANCE
+}
+
+enum StatusKontrak {
+  AKTIF
+  SELESAI
+  DIBATALKAN
+}
+
+enum StatusTagihan {
+  BELUM_BAYAR
+  SEBAGIAN
+  LUNAS
+  TERLAMBAT
+}
+
+enum StatusVerifikasi {
+  PENDING
+  DISETUJUI
+  DITOLAK
+}
+
+enum StatusPengaduan {
+  BARU
+  DIPROSES
+  SELESAI
+}
+
+model User {
+  id            String   @id @default(cuid())
+  nama          String
+  email         String   @unique
+  password_hash String
+  role          Role     @default(PENGHUNI)
+  created_at    DateTime @default(now())
+
+  properti     Properti[]
+  penghuni     Penghuni?
+  logAktivitas LogAktivitas[]
+}
+
+model Properti {
+  id         String   @id @default(cuid())
+  nama       String
+  alamat     String
+  user_id    String
+  user       User     @relation(fields: [user_id], references: [id])
+  created_at DateTime @default(now())
+
+  kamar Kamar[]
+}
+
+model Kamar {
+  id          String      @id @default(cuid())
+  properti_id String
+  properti    Properti    @relation(fields: [properti_id], references: [id], onDelete: Cascade)
+  nomor_kamar String
+  tipe        String
+  harga_sewa  Decimal     @db.Decimal(12, 2)
+  status      StatusKamar @default(KOSONG)
+  fasilitas   String
+  foto_url    String?
+
+  kontrak   Kontrak[]
+  pengaduan Pengaduan[]
+}
+
+model Penghuni {
+  id           String   @id @default(cuid())
+  user_id      String?  @unique
+  user         User?    @relation(fields: [user_id], references: [id])
+  nama         String
+  no_ktp       String
+  no_hp        String   @unique
+  email        String
+  foto_ktp_url String?
+  created_at   DateTime @default(now())
+
+  kontrak   Kontrak[]
+  pengaduan Pengaduan[]
+}
+
+model Kontrak {
+  id                    String        @id @default(cuid())
+  kamar_id              String
+  kamar                 Kamar         @relation(fields: [kamar_id], references: [id])
+  penghuni_id           String
+  penghuni              Penghuni      @relation(fields: [penghuni_id], references: [id])
+  tanggal_mulai         DateTime
+  tanggal_selesai       DateTime
+  harga_sewa_disepakati Decimal       @db.Decimal(12, 2)
+  status                StatusKontrak @default(AKTIF)
+  dokumen_url           String?
+
+  tagihan Tagihan[]
+}
+
+model Tagihan {
+  id          String        @id @default(cuid())
+  kontrak_id  String
+  kontrak     Kontrak       @relation(fields: [kontrak_id], references: [id])
+  periode     String        // e.g. "2026-10"
+  jumlah      Decimal       @db.Decimal(12, 2)
+  denda       Decimal       @default(0) @db.Decimal(12, 2)
+  jatuh_tempo DateTime
+  status      StatusTagihan @default(BELUM_BAYAR)
+  created_at  DateTime      @default(now())
+
+  pembayaran Pembayaran[]
+}
+
+model Pembayaran {
+  id                String           @id @default(cuid())
+  tagihan_id        String
+  tagihan           Tagihan          @relation(fields: [tagihan_id], references: [id])
+  jumlah_dibayar    Decimal          @db.Decimal(12, 2)
+  metode            String
+  tanggal_bayar     DateTime         @default(now())
+  bukti_url         String
+  status_verifikasi StatusVerifikasi @default(PENDING)
+}
+
+model Pengaduan {
+  id               String          @id @default(cuid())
+  kamar_id         String
+  kamar            Kamar           @relation(fields: [kamar_id], references: [id])
+  penghuni_id      String
+  penghuni         Penghuni        @relation(fields: [penghuni_id], references: [id])
+  kategori         String
+  deskripsi        String
+  foto_url         Json?           // Array of image URLs
+  status           StatusPengaduan @default(BARU)
+  catatan_internal String?
+  created_at       DateTime        @default(now())
+  resolved_at      DateTime?
+}
+
+model LogAktivitas {
+  id        String   @id @default(cuid())
+  user_id   String
+  user      User     @relation(fields: [user_id], references: [id])
+  aksi      String
+  detail    String
+  timestamp DateTime @default(now())
+}
+
+model Pengaturan {
+  id             String   @id @default("default")
+  harga_default  Decimal  @default(1500000) @db.Decimal(12, 2)
+  denda_per_hari Decimal  @default(50000) @db.Decimal(12, 2)
+  wa_template    String   @default("Halo Sdr/i {NAMA}, Tagihan sewa kamar {KAMAR} periode {PERIODE} sebesar {JUMLAH} akan jatuh tempo pada {JATUH_TEMPO}.") @db.Text
+  updated_at     DateTime @updatedAt
+}

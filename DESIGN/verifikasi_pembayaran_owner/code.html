@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+
+<html lang="id"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_tab" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "on-background": "#181c22", "surface-tint": "#005db8", "on-secondary-container": "#3f5881", "secondary-container": "#b6d0ff", "primary-fixed-dim": "#aac7ff", "inverse-primary": "#aac7ff", "surface": "#f9f9ff", "surface-bright": "#f9f9ff", "on-tertiary-fixed": "#321200", "error": "#ba1a1a", "primary-fixed": "#d6e3ff", "on-secondary-fixed": "#001b3d", "tertiary-fixed-dim": "#ffb68c", "tertiary": "#964400", "on-tertiary-fixed-variant": "#763400", "on-secondary": "#ffffff", "on-surface": "#181c22", "surface-variant": "#e0e2eb", "on-surface-variant": "#414753", "on-secondary-fixed-variant": "#2d476f", "background": "#f9f9ff", "surface-container-highest": "#e0e2eb", "on-primary-fixed": "#001b3e", "secondary-fixed-dim": "#aec7f7", "surface-container-low": "#f1f3fc", "surface-dim": "#d7dae3", "on-error-container": "#93000a", "primary": "#005ab4", "outline": "#717785", "tertiary-fixed": "#ffdbc9", "primary-container": "#0a73e0", "inverse-surface": "#2d3037", "tertiary-container": "#bd5700", "secondary": "#465f88", "surface-container-high": "#e6e8f1", "on-primary": "#ffffff", "secondary-fixed": "#d6e3ff", "on-error": "#ffffff", "outline-variant": "#c1c6d5", "on-tertiary": "#ffffff", "on-primary-fixed-variant": "#00458d", "inverse-on-surface": "#eef0fa", "surface-container": "#ebedf7", "on-primary-container": "#fefcff", "surface-container-lowest": "#ffffff", "on-tertiary-container": "#fffbff", "error-container": "#ffdad6" }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, fontFamily: { "headline": ["Inter"], "display": ["Inter"], "body": ["Inter"], "label": ["Inter"] } } } }</script><style>@layer base { html, body { width: 100vw; margin: 0; padding: 0; } body { overscroll-behavior-y: none; } .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); } .pt-safe { padding-top: env(safe-area-inset-top, 0px); } main > :first-child { margin-top: 0 !important; } main > :last-child { margin-bottom: 0 !important; } } ::-webkit-scrollbar { display: none; }</style></head><body class="bg-surface font-body text-on-surface antialiased min-h-screen flex flex-col"><header class="fixed top-0 inset-x-0 z-50 bg-surface/85 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] pt-safe"><div class="h-16 px-4 flex items-center justify-between"><div class="flex items-center gap-3"><img alt="Brand logo. - Primary color: #1978e5
+- Font: inter
+- Mode: light
+- Roundness: rounded-md
+" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1U8fwkDrP7PrlMW_jRnAtMXYrof28cTOthWxQhP9MlnOWPVhrRzQlPK3bDi6XckJWjxZHbP5xOqEDXOSid8UhVVbaFTXhjnCVCM8dD6tw6FdzK_N1WALdeqP21SjQyhRKtuM4PvCoFDTbpz9ZaD8IjKZ_b3Z0BENI8G4QG79nMk0AwoTtiqUm582PAuJ_241jLf9KFI4N9OMwu7oafu5XbFUkLUfhKzAtHEZmdXRXLnaSKRUWcByzCYT5E"/><div class="flex flex-col"><span class="text-xs font-semibold tracking-wider uppercase text-primary leading-none">M-KOST</span><span class="text-base font-headline font-bold text-on-surface leading-tight">Verifikasi</span></div></div><div class="flex items-center gap-2"><button aria-label="Notifikasi" class="w-11 h-11 flex items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container transition-colors relative"><span class="material-symbols-outlined text-[22px]">notifications</span><span class="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-error"></span></button><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="flex-1 flex flex-col relative w-full pt-16 pb-24 bg-surface"><div class="flex flex-col w-full">
+<!-- Top Summary & Control Deck -->
+<section class="px-4 pt-3 pb-2 flex flex-col gap-3">
+<!-- Context Banner & Mutasi Status -->
+<div class="bg-surface-container-low rounded-xl p-3.5 flex items-start gap-3 shadow-sm">
+<div class="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">account_balance</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between gap-1 mb-0.5">
+<span class="text-xs font-semibold text-primary">Sistem Mutasi Terhubung</span>
+<span class="inline-flex items-center gap-1 text-[10px] font-medium text-on-surface-variant bg-surface-container px-2 py-0.5 rounded-full">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            BCA &amp; Mandiri Live
+          </span>
+</div>
+<p class="text-xs text-on-surface-variant leading-relaxed">
+          Urutan FIFO (terlama ke terbaru). Periksa kecocokan nominal dan nama pengirim dengan mutasi rekening sebelum menyetujui.
+        </p>
+</div>
+</div>
+<!-- Quick Stats Pills Filter -->
+<div class="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar text-xs font-medium">
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary text-on-primary shadow-sm whitespace-nowrap font-semibold">
+<span class="material-symbols-outlined text-[16px]">hourglass_top</span>
+<span>Semua Pending</span>
+<span class="bg-on-primary/20 text-on-primary px-1.5 py-0.2 rounded-full text-[10px] ml-0.5 font-bold">3</span>
+</button>
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest transition-colors whitespace-nowrap">
+<span class="material-symbols-outlined text-[16px] text-emerald-600">check_circle</span>
+<span>Dicek Hari Ini</span>
+<span class="bg-surface-container text-on-surface px-1.5 py-0.2 rounded-full text-[10px] ml-0.5 font-semibold">12</span>
+</button>
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest transition-colors whitespace-nowrap">
+<span class="material-symbols-outlined text-[16px] text-error">cancel</span>
+<span>Riwayat Ditolak</span>
+<span class="bg-surface-container text-on-surface px-1.5 py-0.2 rounded-full text-[10px] ml-0.5 font-semibold">1</span>
+</button>
+</div>
+</section>
+<!-- Verification Cards Feed (FIFO Order) -->
+<section class="px-4 py-2 flex flex-col gap-4">
+<!-- Card 1: Prioritas / Terlama (4 jam lalu) -->
+<article class="bg-surface-container-lowest rounded-xl p-4 shadow-md flex flex-col gap-3.5 relative overflow-hidden transition-all duration-200" id="card-1">
+<!-- Priority Badge Bar -->
+<div class="flex items-center justify-between">
+<span class="inline-flex items-center gap-1 bg-tertiary-fixed text-on-tertiary-fixed px-2.5 py-1 rounded-full text-[11px] font-bold tracking-tight shadow-sm">
+<span class="material-symbols-outlined text-[14px]">timer</span>
+          Prioritas • Menunggu 4 Jam
+        </span>
+<span class="text-[11px] font-medium text-on-surface-variant">
+          24 Okt 2024, 07:15 WIB
+        </span>
+</div>
+<!-- Tenant & Room Details -->
+<div class="flex items-start justify-between gap-3">
+<div class="flex gap-3 min-w-0">
+<div class="w-11 h-11 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center font-bold text-base shrink-0 shadow-inner">
+            DP
+          </div>
+<div class="flex flex-col min-w-0">
+<h3 class="text-sm font-headline font-bold text-on-surface truncate">Dimas Prasetya</h3>
+<p class="text-xs text-on-surface-variant font-medium truncate">Kamar 204 • Lt. 2 (Deluxe Queen)</p>
+<div class="inline-flex items-center gap-1 text-[11px] text-primary font-medium mt-0.5">
+<span class="material-symbols-outlined text-[13px]">receipt_long</span>
+<span class="truncate">Sewa Bulan November 2024</span>
+</div>
+</div>
+</div>
+<div class="text-right shrink-0">
+<span class="text-[11px] font-medium text-on-surface-variant block">Total Bayar</span>
+<span class="text-base font-headline font-bold text-primary">Rp 1.850.000</span>
+</div>
+</div>
+<!-- Transfer Method & Auto-Match Status -->
+<div class="bg-surface-container-low rounded-lg p-2.5 flex items-center justify-between text-xs">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[18px]">account_balance_wallet</span>
+<div class="flex flex-col">
+<span class="font-semibold text-on-surface">BCA Transfer → Rek BCA Kost</span>
+<span class="text-[10px] text-on-surface-variant">A.N. Dimas Prasetya (Rek: •••• 4120)</span>
+</div>
+</div>
+<span class="inline-flex items-center gap-0.5 text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
+<span class="material-symbols-outlined text-[12px]">check_circle</span> Cocok Mutasi
+        </span>
+</div>
+<!-- Receipt Thumbnail Preview with Tap to Zoom -->
+<div class="relative group cursor-pointer rounded-lg overflow-hidden bg-surface-container" onclick="openLightbox('Dimas Prasetya', 'Rp 1.850.000', 'BCA Transfer', '24 Okt 2024, 07:15 WIB', 'TRX-BCA-20241024-8849')">
+<img class="w-full h-36 object-cover object-center group-hover:scale-105 transition-transform duration-300" data-alt="Digital mobile banking transfer receipt on a smartphone screen showing successful transaction proof from BCA to M-Kost management. Clean typography with blue and white accents, date 24 October 2024, nominal IDR 1,850,000, recipient name Kost Bahagia, high definition and verified watermark." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBSl3Svj_z8PuGDLNCmXPR-PYrqjSLZA66tD_NzQf41AIahjppO1rRKxZM_REcTl5IdqS2LlTT3Cf1XzfQBxh7-7ssXO8BL-abrv1LUP5iQGduAdyDfneZgUpjs_Huz8qOvGc1wm8Z8iJpSRGEQI41DR2CBtqR8Oi5Nc9pXWZIURoix0tmryeehnmqomCa8cB_vNrfgym5YBiSsR9sV7IzHzyLviRoQ5fpLIEVagFBhF2mgfQv49KMc9w"/>
+<div class="absolute inset-0 bg-gradient-to-t from-on-background/80 via-on-background/20 to-transparent flex items-end justify-between p-3">
+<div class="flex items-center gap-1.5 text-on-primary text-xs font-medium">
+<span class="material-symbols-outlined text-[18px]">zoom_in</span>
+<span>Ketuk untuk perbesar bukti transfer</span>
+</div>
+<span class="bg-surface/90 text-on-surface text-[10px] font-bold px-2 py-0.5 rounded backdrop-blur-sm">
+            PNG • 842 KB
+          </span>
+</div>
+</div>
+<!-- Action Buttons Row -->
+<div class="grid grid-cols-2 gap-2.5 pt-1">
+<button class="h-10 px-3 rounded-lg bg-surface-container text-error hover:bg-error-container hover:text-on-error-container text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 active:scale-[0.98]" onclick="handleReject('card-1', 'Dimas Prasetya')">
+<span class="material-symbols-outlined text-[18px]">close</span>
+<span>Tolak Bukti</span>
+</button>
+<button class="h-10 px-3 rounded-lg bg-primary text-on-primary hover:bg-surface-tint text-xs font-semibold shadow-sm transition-all flex items-center justify-center gap-1.5 active:scale-[0.98]" onclick="handleApprove('card-1', 'Dimas Prasetya')">
+<span class="material-symbols-outlined text-[18px]">check</span>
+<span>Setujui Pembayaran</span>
+</button>
+</div>
+</article>
+<!-- Card 2: Menunggu 2 jam lalu -->
+<article class="bg-surface-container-lowest rounded-xl p-4 shadow-md flex flex-col gap-3.5 relative overflow-hidden transition-all duration-200" id="card-2">
+<!-- Waiting Indicator -->
+<div class="flex items-center justify-between">
+<span class="inline-flex items-center gap-1 bg-surface-container-high text-on-surface-variant px-2.5 py-1 rounded-full text-[11px] font-semibold">
+<span class="material-symbols-outlined text-[14px]">schedule</span>
+          Menunggu 2 Jam lalu
+        </span>
+<span class="text-[11px] font-medium text-on-surface-variant">
+          24 Okt 2024, 09:30 WIB
+        </span>
+</div>
+<!-- Tenant & Room Details -->
+<div class="flex items-start justify-between gap-3">
+<div class="flex gap-3 min-w-0">
+<div class="w-11 h-11 rounded-full bg-secondary-fixed text-on-secondary-fixed flex items-center justify-center font-bold text-base shrink-0 shadow-inner">
+            RS
+          </div>
+<div class="flex flex-col min-w-0">
+<h3 class="text-sm font-headline font-bold text-on-surface truncate">Rian Setiawan</h3>
+<p class="text-xs text-on-surface-variant font-medium truncate">Kamar 102 • Lt. 1 (Deluxe Twin)</p>
+<div class="inline-flex items-center gap-1 text-[11px] text-primary font-medium mt-0.5">
+<span class="material-symbols-outlined text-[13px]">receipt_long</span>
+<span class="truncate">Sewa Bulan November 2024</span>
+</div>
+</div>
+</div>
+<div class="text-right shrink-0">
+<span class="text-[11px] font-medium text-on-surface-variant block">Total Bayar</span>
+<span class="text-base font-headline font-bold text-primary">Rp 2.100.000</span>
+</div>
+</div>
+<!-- Transfer Method & Auto-Match Status -->
+<div class="bg-surface-container-low rounded-lg p-2.5 flex items-center justify-between text-xs">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[18px]">account_balance_wallet</span>
+<div class="flex flex-col">
+<span class="font-semibold text-on-surface">Mandiri Livin → Mandiri Kost</span>
+<span class="text-[10px] text-on-surface-variant">A.N. Rian Setiawan (Rek: •••• 9012)</span>
+</div>
+</div>
+<span class="inline-flex items-center gap-0.5 text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
+<span class="material-symbols-outlined text-[12px]">check_circle</span> Cocok Mutasi
+        </span>
+</div>
+<!-- Receipt Thumbnail Preview -->
+<div class="relative group cursor-pointer rounded-lg overflow-hidden bg-surface-container" onclick="openLightbox('Rian Setiawan', 'Rp 2.100.000', 'Mandiri Livin', '24 Okt 2024, 09:30 WIB', 'MDR-LIVIN-8891024-X')">
+<img class="w-full h-36 object-cover object-center group-hover:scale-105 transition-transform duration-300" data-alt="Digital mobile banking screenshot showing yellow-gold and blue themed Mandiri Livin receipt page with status BERHASIL. Indonesian banking typography detailing transfer of IDR 2,100,000 for room rental fee with reference code and date timestamp clearly rendered." src="https://lh3.googleusercontent.com/aida-public/AB6AXuClkxKB3B_Y27M71EYdJbI_tfPaBsf6HAPw4HvTPnoP-dkT35Tr4kxGX9rkcQF3lffmuFKqPfa-wIe5vsPvWLY_17cLgCpayEDI6g3WmFLRZe7aFBz8LTjjxlX136F_HvJSawKarvKytzVCwKQGYBxNpv9_gtFQLO1Sv_0cHj-e7SVva5LyMcKYBs_3wJZR2KKmjS5YXYLwZrNcwGQ3oh77G5km2G3b9_6Ow44YMUOZQE_rn1zxQ9A0wg"/>
+<div class="absolute inset-0 bg-gradient-to-t from-on-background/80 via-on-background/20 to-transparent flex items-end justify-between p-3">
+<div class="flex items-center gap-1.5 text-on-primary text-xs font-medium">
+<span class="material-symbols-outlined text-[18px]">zoom_in</span>
+<span>Ketuk untuk perbesar bukti transfer</span>
+</div>
+<span class="bg-surface/90 text-on-surface text-[10px] font-bold px-2 py-0.5 rounded backdrop-blur-sm">
+            JPG • 614 KB
+          </span>
+</div>
+</div>
+<!-- Action Buttons Row -->
+<div class="grid grid-cols-2 gap-2.5 pt-1">
+<button class="h-10 px-3 rounded-lg bg-surface-container text-error hover:bg-error-container hover:text-on-error-container text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 active:scale-[0.98]" onclick="handleReject('card-2', 'Rian Setiawan')">
+<span class="material-symbols-outlined text-[18px]">close</span>
+<span>Tolak Bukti</span>
+</button>
+<button class="h-10 px-3 rounded-lg bg-primary text-on-primary hover:bg-surface-tint text-xs font-semibold shadow-sm transition-all flex items-center justify-center gap-1.5 active:scale-[0.98]" onclick="handleApprove('card-2', 'Rian Setiawan')">
+<span class="material-symbols-outlined text-[18px]">check</span>
+<span>Setujui Pembayaran</span>
+</button>
+</div>
+</article>
+<!-- Card 3: Menunggu 45 menit lalu -->
+<article class="bg-surface-container-lowest rounded-xl p-4 shadow-md flex flex-col gap-3.5 relative overflow-hidden transition-all duration-200" id="card-3">
+<!-- Waiting Indicator -->
+<div class="flex items-center justify-between">
+<span class="inline-flex items-center gap-1 bg-surface-container-high text-on-surface-variant px-2.5 py-1 rounded-full text-[11px] font-semibold">
+<span class="material-symbols-outlined text-[14px]">schedule</span>
+          Menunggu 45 Menit lalu
+        </span>
+<span class="text-[11px] font-medium text-on-surface-variant">
+          24 Okt 2024, 10:45 WIB
+        </span>
+</div>
+<!-- Tenant & Room Details -->
+<div class="flex items-start justify-between gap-3">
+<div class="flex gap-3 min-w-0">
+<div class="w-11 h-11 rounded-full bg-primary-fixed text-on-primary-fixed flex items-center justify-center font-bold text-base shrink-0 shadow-inner">
+            FP
+          </div>
+<div class="flex flex-col min-w-0">
+<h3 class="text-sm font-headline font-bold text-on-surface truncate">Fajar Pratama</h3>
+<p class="text-xs text-on-surface-variant font-medium truncate">Kamar 205 • Lt. 2 (Deluxe Queen)</p>
+<div class="inline-flex items-center gap-1 text-[11px] text-primary font-medium mt-0.5">
+<span class="material-symbols-outlined text-[13px]">receipt_long</span>
+<span class="truncate">Sewa Nov 2024 + Iuran Laundry</span>
+</div>
+</div>
+</div>
+<div class="text-right shrink-0">
+<span class="text-[11px] font-medium text-on-surface-variant block">Total Bayar</span>
+<span class="text-base font-headline font-bold text-primary">Rp 1.850.000</span>
+</div>
+</div>
+<!-- Transfer Method & Auto-Match Status -->
+<div class="bg-surface-container-low rounded-lg p-2.5 flex items-center justify-between text-xs">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[18px]">account_balance_wallet</span>
+<div class="flex flex-col">
+<span class="font-semibold text-on-surface">BNI Mobile → BNI Kost</span>
+<span class="text-[10px] text-on-surface-variant">A.N. Fajar Pratama (Rek: •••• 7731)</span>
+</div>
+</div>
+<span class="inline-flex items-center gap-0.5 text-[10px] font-semibold text-on-surface-variant bg-surface-container px-2 py-0.5 rounded">
+<span class="material-symbols-outlined text-[12px]">sync</span> Menunggu Sinkron
+        </span>
+</div>
+<!-- Receipt Thumbnail Preview -->
+<div class="relative group cursor-pointer rounded-lg overflow-hidden bg-surface-container" onclick="openLightbox('Fajar Pratama', 'Rp 1.850.000', 'BNI Mobile', '24 Okt 2024, 10:45 WIB', 'BNI-MB-20241024-99124')">
+<img class="w-full h-36 object-cover object-center group-hover:scale-105 transition-transform duration-300" data-alt="Digital mobile banking transaction proof screenshot with orange and teal BNI Mobile interface style. Showing transfer status Berhasil, nominal IDR 1,850,000 to Kost Bahagia checking account, clean UI with reference code and transaction date clearly visible." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDBuiZEnXVjSwkKvRhGmG-RTG1uHVNrnJTzztc6tvNeE1afUOe_4-0nU-zVWbHpsGcPJQs2jAuinUNUQFH0QVGyQogPicdLcIE_HC3LDzorc3lXlqpR1AU4D1XX8UBYnCMoeD2cHaUVbLSrYla0u1_OLJ8LWAHcu1NNHii_NG2zt-Hor-0uNTXOsDUA1FfpYPgPjFHQJ0djrd4jzNkn5tLdthB3CCyyi_aRnosByJqdqevV1BKmwk3xeQ"/>
+<div class="absolute inset-0 bg-gradient-to-t from-on-background/80 via-on-background/20 to-transparent flex items-end justify-between p-3">
+<div class="flex items-center gap-1.5 text-on-primary text-xs font-medium">
+<span class="material-symbols-outlined text-[18px]">zoom_in</span>
+<span>Ketuk untuk perbesar bukti transfer</span>
+</div>
+<span class="bg-surface/90 text-on-surface text-[10px] font-bold px-2 py-0.5 rounded backdrop-blur-sm">
+            PNG • 920 KB
+          </span>
+</div>
+</div>
+<!-- Action Buttons Row -->
+<div class="grid grid-cols-2 gap-2.5 pt-1">
+<button class="h-10 px-3 rounded-lg bg-surface-container text-error hover:bg-error-container hover:text-on-error-container text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 active:scale-[0.98]" onclick="handleReject('card-3', 'Fajar Pratama')">
+<span class="material-symbols-outlined text-[18px]">close</span>
+<span>Tolak Bukti</span>
+</button>
+<button class="h-10 px-3 rounded-lg bg-primary text-on-primary hover:bg-surface-tint text-xs font-semibold shadow-sm transition-all flex items-center justify-center gap-1.5 active:scale-[0.98]" onclick="handleApprove('card-3', 'Fajar Pratama')">
+<span class="material-symbols-outlined text-[18px]">check</span>
+<span>Setujui Pembayaran</span>
+</button>
+</div>
+</article>
+</section>
+<!-- Empty State Placeholder (hidden initially, displays when all items handled) -->
+<div class="hidden mx-4 my-6 p-6 rounded-xl bg-surface-container text-center flex-col items-center justify-center gap-3" id="all-cleared-banner">
+<div class="w-14 h-14 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shadow-sm">
+<span class="material-symbols-outlined text-3xl" style="font-variation-settings: 'FILL' 1;">task_alt</span>
+</div>
+<div>
+<h4 class="text-base font-headline font-bold text-on-surface">Semua Bukti Telah Diverifikasi!</h4>
+<p class="text-xs text-on-surface-variant max-w-xs mt-1">
+        Kerja bagus! Antrean verifikasi pembayaran saat ini kosong. Anda akan menerima notifikasi jika ada pembayaran baru.
+      </p>
+</div>
+</div>
+<!-- Interactive Lightbox Modal for Transfer Receipt Fullscreen Preview -->
+<div class="fixed inset-0 z-50 bg-on-background/80 backdrop-blur-md hidden flex flex-col justify-end transition-opacity duration-300" id="receipt-lightbox">
+<!-- Click backdrop to dismiss -->
+<div class="flex-1 w-full" onclick="closeLightbox()"></div>
+<!-- Modal Content Card -->
+<div class="w-full bg-surface-container-lowest rounded-t-2xl max-h-[85vh] flex flex-col overflow-hidden shadow-2xl animate-in slide-in-from-bottom duration-300">
+<!-- Modal Header -->
+<div class="px-4 py-3 bg-surface flex items-center justify-between border-b border-surface-variant/40">
+<div class="flex items-center gap-2 min-w-0">
+<div class="w-7 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[16px]">receipt</span>
+</div>
+<div class="truncate">
+<h4 class="text-xs font-bold text-on-surface leading-tight" id="modal-tenant-name">Detail Bukti Transfer</h4>
+<span class="text-[10px] text-on-surface-variant" id="modal-trx-code">TRX-BCA-20241024-8849</span>
+</div>
+</div>
+<button class="w-8 h-8 rounded-full bg-surface-container text-on-surface-variant flex items-center justify-center hover:bg-surface-container-high transition-colors" onclick="closeLightbox()">
+<span class="material-symbols-outlined text-[18px]">close</span>
+</button>
+</div>
+<!-- Receipt Visual Area with Zoom Indicator -->
+<div class="relative bg-on-background/5 p-4 flex items-center justify-center overflow-auto max-h-[50vh]">
+<img class="max-w-full max-h-[44vh] object-contain rounded-lg shadow-md" data-alt="Digital mobile banking transfer receipt on a smartphone screen showing successful transaction proof with verified bank seal, recipient Kost Bahagia account, sender identity, nominal amount, and date." id="modal-receipt-img" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBvzCcbntRubEhLuy63sVA_IrDsM06qrWGlM6WgmIAF0kzVBJTZ7L0eNfcpeJaXJTS0VNEmXQ5LxHalu2Awje2Fy26rHyFcJqZulFKyxtaZlERcQbFxNuNBwmVVZnNEJy58Q4kJNGhwjjL3VIYIslX1MX1Qg_UQCJAw71zUibaDs0ISsngQ5eoo8_lcGeThxFX8hnxDVyRNuPymMpK1MWINTUCKEExs5mEX32kw1B2CWpK6GAB9XRm79A"/>
+<div class="absolute bottom-6 right-6 bg-on-background/70 text-on-primary text-[10px] font-medium px-2.5 py-1 rounded-full backdrop-blur-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px]">pinch</span>
+<span>Zoom Tersedia</span>
+</div>
+</div>
+<!-- Quick Inspection Details -->
+<div class="p-4 flex flex-col gap-2.5 bg-surface-container-low">
+<div class="grid grid-cols-2 gap-2 text-xs">
+<div class="bg-surface-container-lowest p-2.5 rounded-lg">
+<span class="text-[10px] text-on-surface-variant block font-medium">Nominal Validasi</span>
+<span class="text-sm font-bold text-primary mt-0.5 block" id="modal-nominal">Rp 1.850.000</span>
+</div>
+<div class="bg-surface-container-lowest p-2.5 rounded-lg">
+<span class="text-[10px] text-on-surface-variant block font-medium">Metode / Bank</span>
+<span class="text-xs font-semibold text-on-surface mt-0.5 block truncate" id="modal-method">BCA Transfer</span>
+</div>
+</div>
+<!-- Action Inside Lightbox -->
+<div class="flex items-center gap-2 pt-1">
+<button class="flex-1 h-10 rounded-lg bg-primary text-on-primary font-semibold text-xs transition-colors flex items-center justify-center gap-1.5 shadow-sm" onclick="closeLightbox()">
+<span class="material-symbols-outlined text-[16px]">check_circle</span>
+<span>Konfirmasi Selesai Diperiksa</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Toast Notification Overlay -->
+<div class="fixed top-20 inset-x-4 z-50 pointer-events-none transform -translate-y-4 opacity-0 transition-all duration-300 flex justify-center" id="toast">
+<div class="px-4 py-2.5 rounded-xl shadow-lg text-xs font-medium flex items-center gap-2 bg-on-surface text-surface" id="toast-body">
+<span class="material-symbols-outlined text-[18px] text-emerald-400" id="toast-icon">check_circle</span>
+<span id="toast-text">Tindakan berhasil</span>
+</div>
+</div>
+</div>
+<script>
+  let pendingCount = 3;
+
+  function showToast(message, isError = false) {
+    const toast = document.getElementById('toast');
+    const toastText = document.getElementById('toast-text');
+    const toastIcon = document.getElementById('toast-icon');
+    const toastBody = document.getElementById('toast-body');
+
+    toastText.innerText = message;
+    if (isError) {
+      toastIcon.innerText = 'cancel';
+      toastIcon.className = 'material-symbols-outlined text-[18px] text-error-container';
+      toastBody.className = 'px-4 py-2.5 rounded-xl shadow-lg text-xs font-medium flex items-center gap-2 bg-error text-on-error';
+    } else {
+      toastIcon.innerText = 'check_circle';
+      toastIcon.className = 'material-symbols-outlined text-[18px] text-emerald-400';
+      toastBody.className = 'px-4 py-2.5 rounded-xl shadow-lg text-xs font-medium flex items-center gap-2 bg-on-surface text-surface';
+    }
+
+    toast.classList.remove('-translate-y-4', 'opacity-0');
+    toast.classList.add('translate-y-0', 'opacity-100');
+
+    setTimeout(() => {
+      toast.classList.add('-translate-y-4', 'opacity-0');
+      toast.classList.remove('translate-y-0', 'opacity-100');
+    }, 2400);
+  }
+
+  function handleApprove(cardId, tenantName) {
+    const card = document.getElementById(cardId);
+    if (!card) return;
+
+    card.classList.add('opacity-40', 'scale-[0.98]');
+    setTimeout(() => {
+      card.remove();
+      pendingCount--;
+      showToast(`Pembayaran ${tenantName} telah disetujui! Status kamar diperbarui.`);
+      checkEmptyState();
+    }, 300);
+  }
+
+  function handleReject(cardId, tenantName) {
+    const reason = prompt(`Alasan penolakan bukti pembayaran ${tenantName}:`, 'Nominal tidak sesuai mutasi rekening.');
+    if (reason !== null && reason.trim() !== '') {
+      const card = document.getElementById(cardId);
+      if (!card) return;
+
+      card.classList.add('opacity-40', 'scale-[0.98]');
+      setTimeout(() => {
+        card.remove();
+        pendingCount--;
+        showToast(`Bukti ${tenantName} ditolak. Notifikasi perbaikan dikirim.`, true);
+        checkEmptyState();
+      }, 300);
+    }
+  }
+
+  function checkEmptyState() {
+    if (pendingCount <= 0) {
+      const emptyBanner = document.getElementById('all-cleared-banner');
+      if (emptyBanner) {
+        emptyBanner.classList.remove('hidden');
+        emptyBanner.classList.add('flex');
+      }
+    }
+  }
+
+  function openLightbox(tenant, nominal, method, time, trxCode) {
+    document.getElementById('modal-tenant-name').innerText = `Bukti Transfer - ${tenant}`;
+    document.getElementById('modal-trx-code').innerText = `${trxCode} • ${time}`;
+    document.getElementById('modal-nominal').innerText = nominal;
+    document.getElementById('modal-method').innerText = method;
+
+    const modal = document.getElementById('receipt-lightbox');
+    modal.classList.remove('hidden');
+  }
+
+  function closeLightbox() {
+    const modal = document.getElementById('receipt-lightbox');
+    modal.classList.add('hidden');
+  }
+</script></main><nav class="fixed bottom-0 inset-x-0 z-50 pb-safe bg-surface/90 backdrop-blur-xl shadow-[0_-2px_12px_rgba(0,0,0,0.04)]" data-active-classes="text-primary font-semibold"><div class="grid grid-cols-5 h-16 items-center px-1"><a class="flex flex-col items-center justify-center h-full min-h-[44px] min-w-[44px] gap-1 text-on-surface-variant transition-colors hover:text-on-surface" data-path="dashboard" href="#"><span class="material-symbols-outlined text-[22px]">dashboard</span><span class="text-[11px] font-label tracking-tight truncate max-w-full px-0.5">Dashboard</span></a><a class="flex flex-col items-center justify-center h-full min-h-[44px] min-w-[44px] gap-1 text-on-surface-variant transition-colors hover:text-on-surface" data-path="kamar" href="#"><span class="material-symbols-outlined text-[22px]">meeting_room</span><span class="text-[11px] font-label tracking-tight truncate max-w-full px-0.5">Kamar</span></a><a aria-current="page" class="flex flex-col items-center justify-center h-full min-h-[44px] min-w-[44px] gap-1 transition-colors relative text-primary font-semibold" data-path="verifikasi" href="#"><div class="relative flex items-center justify-center"><span class="material-symbols-outlined text-[22px]">verified_user</span><span class="absolute -top-1 -right-2 min-w-[16px] h-4 px-1 rounded-full bg-error text-on-error text-[10px] font-bold flex items-center justify-center leading-none">3</span></div><span class="text-[11px] font-label tracking-tight truncate max-w-full px-0.5">Verifikasi</span></a><a class="flex flex-col items-center justify-center h-full min-h-[44px] min-w-[44px] gap-1 text-on-surface-variant transition-colors hover:text-on-surface" data-path="komplain" href="#"><span class="material-symbols-outlined text-[22px]">report_problem</span><span class="text-[11px] font-label tracking-tight truncate max-w-full px-0.5">Komplain</span></a><a class="flex flex-col items-center justify-center h-full min-h-[44px] min-w-[44px] gap-1 text-on-surface-variant transition-colors hover:text-on-surface" data-path="profil" href="#"><span class="material-symbols-outlined text-[22px]">account_circle</span><span class="text-[11px] font-label tracking-tight truncate max-w-full px-0.5">Profil</span></a></div></nav></body></html>

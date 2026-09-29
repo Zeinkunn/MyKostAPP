@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_stack" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "secondary": "#465f88", "error-container": "#ffdad6", "on-surface": "#181c22", "tertiary-container": "#bd5700", "on-tertiary-fixed": "#321200", "primary-fixed": "#d6e3ff", "surface-tint": "#005db8", "secondary-container": "#b6d0ff", "on-primary-container": "#fefcff", "inverse-surface": "#2d3037", "surface-container-low": "#f1f3fc", "primary-fixed-dim": "#aac7ff", "surface-container-high": "#e6e8f1", "surface-container-lowest": "#ffffff", "on-primary-fixed-variant": "#00458d", "surface-variant": "#e0e2eb", "on-background": "#181c22", "secondary-fixed": "#d6e3ff", "surface-container": "#ebedf7", "on-tertiary-fixed-variant": "#763400", "on-error": "#ffffff", "on-surface-variant": "#414753", "on-tertiary-container": "#fffbff", "on-tertiary": "#ffffff", "on-secondary": "#ffffff", "inverse-on-surface": "#eef0fa", "surface": "#f9f9ff", "outline-variant": "#c1c6d5", "primary": "#005ab4", "tertiary-fixed": "#ffdbc9", "secondary-fixed-dim": "#aec7f7", "tertiary-fixed-dim": "#ffb68c", "primary-container": "#0a73e0", "surface-container-highest": "#e0e2eb", "on-secondary-fixed": "#001b3d", "on-error-container": "#93000a", "on-secondary-container": "#3f5881", "tertiary": "#964400", "on-primary": "#ffffff", "outline": "#717785", "inverse-primary": "#aac7ff", "surface-bright": "#f9f9ff", "on-primary-fixed": "#001b3e", "background": "#f9f9ff", "on-secondary-fixed-variant": "#2d476f", "surface-dim": "#d7dae3", "error": "#ba1a1a" }, "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, "spacing": {}, "fontFamily": { "headline": ["Inter"], "display": ["Inter"], "body": ["Inter"], "label": ["Inter"] }, "fontSize": {} } } }</script><style>@layer base{html,body{width:100%;margin:0;padding:0;}body{overscroll-behavior-y:none;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-surface font-body text-on-surface flex flex-col min-h-screen"><header class="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-xl pt-safe shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-16 px-4 flex items-center justify-between"><div class="flex items-center gap-1"><button aria-label="Go back" class="w-11 h-11 flex items-center justify-center text-on-surface hover:text-primary transition-colors" onclick="window.history.back()" type="button"><span class="material-symbols-outlined text-[24px]">arrow_back</span></button><h1 class="text-base font-headline font-semibold text-on-surface truncate">Upload Bukti Bayar</h1></div><div class="flex items-center gap-2"><button aria-label="Help &amp; Information" class="w-11 h-11 flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors" type="button"><span class="material-symbols-outlined text-[22px]">help_outline</span></button><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="flex-1 flex flex-col relative w-full pt-16 bg-surface pb-safe"><div class="flex flex-col w-full pb-8">
+<!-- Subtle decorative ambient header aura -->
+<div class="px-4 pt-4 pb-2 space-y-4">
+<!-- Invoice Context Tag -->
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-secondary-container text-on-secondary-container text-xs font-semibold">
+<span class="material-symbols-outlined text-[15px]" style="font-variation-settings: 'FILL' 1;">receipt_long</span>
+<span>Tagihan Kost • Oktober 2024</span>
+</div>
+<div class="flex items-center gap-1 text-xs text-on-surface-variant font-medium">
+<span class="material-symbols-outlined text-[15px] text-tertiary">schedule</span>
+<span>Jatuh Tempo: 28 Okt 2024</span>
+</div>
+</div>
+<!-- 1. Destination Account Card -->
+<div class="relative overflow-hidden rounded-xl bg-surface-container-high p-4 shadow-sm">
+<div class="flex items-start justify-between gap-3">
+<div class="flex flex-col">
+<div class="inline-flex items-center gap-1 text-[11px] font-semibold text-primary uppercase tracking-wider mb-1">
+<span class="material-symbols-outlined text-[14px]">verified</span>
+<span>Rekening Resmi Kost Griya Asri</span>
+</div>
+<span class="text-sm font-semibold text-on-surface">a.n. Ibu Hj. Maryam (Pengelola)</span>
+<span class="text-xs text-on-surface-variant">PT Griya Asri Harmoni • Unit 204</span>
+</div>
+<!-- Bank Identifier Pill -->
+<div class="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-surface-container-lowest shadow-sm">
+<span class="font-bold text-xs tracking-tight text-primary">BCA</span>
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+</div>
+</div>
+<!-- Account Number with Copy Interaction -->
+<div class="mt-3.5 pt-3 border-t border-outline-variant/30 flex items-center justify-between bg-surface-container-lowest/80 rounded-lg px-3.5 py-2.5 backdrop-blur-sm">
+<div class="flex flex-col">
+<span class="text-[10px] uppercase font-medium text-on-surface-variant tracking-wider">Nomor Rekening Tujuan</span>
+<span class="font-headline font-bold text-base text-on-surface tracking-wider" id="accountNumber">8077 0812 3991</span>
+</div>
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary-fixed text-on-primary-fixed text-xs font-semibold active:scale-95 transition-transform duration-150" id="copyBtn" onclick="copyAccountNumber()" type="button">
+<span class="material-symbols-outlined text-[15px]" id="copyIcon">content_copy</span>
+<span id="copyLabel">Salin</span>
+</button>
+</div>
+<div class="mt-2.5 flex items-center gap-1.5 text-[11px] text-on-surface-variant">
+<span class="material-symbols-outlined text-[14px] text-tertiary">info</span>
+<span>Pastikan transfer nominal tepat agar verifikasi lebih cepat</span>
+</div>
+</div>
+<!-- 2. Large Photo Upload Dropzone & Interactive Mock Area -->
+<div class="space-y-2">
+<div class="flex items-center justify-between">
+<label class="text-xs font-bold text-on-surface tracking-wide uppercase">
+          Unggah Bukti Transfer <span class="text-error">*</span>
+</label>
+<span class="text-[11px] text-on-surface-variant">JPG, PNG, PDF (Maks. 10 MB)</span>
+</div>
+<!-- Dropzone Container (Tappable Area) -->
+<div class="relative rounded-xl bg-surface-container-low p-5 text-center transition-all duration-200 shadow-sm cursor-pointer hover:bg-surface-container" id="dropzoneContainer">
+<!-- Hidden real input for camera/gallery trigger -->
+<input accept="image/*,application/pdf" class="hidden" id="slipFileInput" onchange="handleFileSelected(event)" type="file"/>
+<div class="flex flex-col items-center justify-center py-3" id="emptyUploadState">
+<div class="w-16 h-16 rounded-full bg-primary-fixed flex items-center justify-center text-primary mb-3 shadow-inner">
+<span class="material-symbols-outlined text-[32px]">add_a_photo</span>
+</div>
+<h3 class="font-headline font-semibold text-sm text-on-surface mb-1">
+            Ketuk untuk unggah bukti transfer
+          </h3>
+<p class="text-xs text-on-surface-variant max-w-[240px] leading-relaxed">
+            Ambil foto struk ATM atau screenshoot m-banking yang jelas &amp; tidak buram
+          </p>
+<!-- Quick Action Buttons -->
+<div class="mt-4 flex items-center gap-2">
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container-lowest text-xs font-semibold text-primary shadow-sm active:scale-95 transition-transform" onclick="triggerFileInput(event)" type="button">
+<span class="material-symbols-outlined text-[16px]">photo_camera</span>
+<span>Kamera</span>
+</button>
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container-lowest text-xs font-semibold text-primary shadow-sm active:scale-95 transition-transform" onclick="triggerFileInput(event)" type="button">
+<span class="material-symbols-outlined text-[16px]">photo_library</span>
+<span>Galeri Foto</span>
+</button>
+</div>
+</div>
+<!-- Realistic Uploaded Preview Card State (Hidden initially, shown on click/interaction) -->
+<div class="hidden flex-col items-stretch text-left" id="previewUploadedState">
+<div class="flex items-center justify-between pb-2 mb-2 border-b border-outline-variant/30">
+<div class="flex items-center gap-1.5 text-xs font-semibold text-primary">
+<span class="material-symbols-outlined text-[18px]">check_circle</span>
+<span>Bukti transfer berhasil dipilih</span>
+</div>
+<button class="text-[11px] font-semibold text-error flex items-center gap-0.5 active:opacity-70" onclick="removeUploadedFile(event)" type="button">
+<span class="material-symbols-outlined text-[14px]">delete</span>
+<span>Hapus</span>
+</button>
+</div>
+<div class="flex items-center gap-3 bg-surface-container-lowest p-3 rounded-lg shadow-sm">
+<div class="w-14 h-14 rounded-lg bg-surface-container-high overflow-hidden flex-shrink-0 flex items-center justify-center relative">
+<img class="w-full h-full object-cover rounded-lg" data-alt="A clean, flat lay smartphone macro photo showing a modern digital mobile banking transfer receipt screen on an iPhone, displaying successful transaction confirmation of 1850000 IDR to Griya Asri Kost with timestamp and approval code, crisp digital typography, corporate blue theme lighting." id="previewImg" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD5-d3VNGrypl-sUOdGfe7OYlvyuBP7AgwWr3olfcv8wqMbW6uoIwAwuzAaif6VuhWlF0W53e-Ra2fWF4gFUrMRXFECV7xHYCYq_EnCjsoWFz_UxADqP9KFBatrw9XMOHQSmdx26lrH5J9DyvPUmVEz8ArZ4av54XKmUIuRtV415XHp4YXGA12jG7qE7WfE5ph0n6ffNeg_e57BzrU1Bvtw-SiWsMywBIXQMR04eDjh7hrtzsyKibmaHA"/>
+<div class="absolute inset-0 bg-primary/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-on-surface text-[18px]">receipt</span>
+</div>
+</div>
+<div class="flex flex-col min-w-0 flex-1">
+<span class="text-xs font-semibold text-on-surface truncate" id="previewFileName">struk_transfer_bca_25okt.jpg</span>
+<span class="text-[11px] text-on-surface-variant" id="previewFileSize">1.8 MB • JPG</span>
+<span class="inline-flex items-center gap-1 text-[10px] text-secondary font-medium mt-0.5">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+<span>Terbaca tajam &amp; lengkap</span>
+</span>
+</div>
+<button class="px-2.5 py-1.5 rounded-lg bg-surface-container-high text-xs font-medium text-on-surface-variant flex-shrink-0" onclick="triggerFileInput(event)" type="button">
+              Ganti
+            </button>
+</div>
+</div>
+</div>
+</div>
+<!-- 3. Payment Amount Input Field -->
+<div class="space-y-1.5">
+<div class="flex items-center justify-between">
+<label class="text-xs font-bold text-on-surface tracking-wide uppercase" for="transferAmount">
+          Nominal yang Ditransfer <span class="text-error">*</span>
+</label>
+<div class="flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed-variant text-[11px] font-semibold">
+<span class="material-symbols-outlined text-[13px]">done_all</span>
+<span>Sesuai total tagihan</span>
+</div>
+</div>
+<div class="relative flex items-center">
+<div class="absolute left-3.5 flex items-center pointer-events-none text-on-surface-variant font-bold text-sm">
+          Rp
+        </div>
+<input class="w-full pl-11 pr-12 py-3 bg-surface-container-lowest rounded-xl font-headline font-bold text-base text-on-surface shadow-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all" id="transferAmount" inputmode="numeric" placeholder="0" type="text" value="1.850.000"/>
+<div class="absolute right-3 text-xs text-on-surface-variant font-semibold">
+          IDR
+        </div>
+</div>
+<p class="text-[11px] text-on-surface-variant pl-1">
+        Tagihan aktif Oktober 2024: <span class="font-semibold text-on-surface">Rp 1.850.000</span> (Kamar 204 + Listrik)
+      </p>
+</div>
+<!-- 4. Notes Input Field -->
+<div class="space-y-1.5">
+<div class="flex items-center justify-between">
+<label class="text-xs font-bold text-on-surface tracking-wide uppercase" for="tenantNotes">
+          Catatan Penghuni <span class="font-normal text-on-surface-variant capitalize">(Opsional)</span>
+</label>
+<span class="text-[11px] text-on-surface-variant font-mono" id="notesCount">0/120</span>
+</div>
+<textarea class="w-full px-3.5 py-2.5 bg-surface-container-lowest rounded-xl text-xs text-on-surface placeholder:text-on-surface-variant/60 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all resize-none" id="tenantNotes" maxlength="120" oninput="updateCharCount(this)" placeholder="Contoh: Pelunasan kost kamar 204 via M-Banking BCA Dimas" rows="2"></textarea>
+</div>
+<!-- 5. Important Checklist / Info Box -->
+<div class="rounded-xl bg-surface-container-low p-3.5 space-y-2">
+<div class="flex items-center gap-1.5 text-xs font-bold text-on-surface">
+<span class="material-symbols-outlined text-tertiary text-[17px]">checklist</span>
+<span>Tips Agar Verifikasi Cepat Disetujui</span>
+</div>
+<ul class="text-[11px] text-on-surface-variant space-y-1.5 pl-1">
+<li class="flex items-start gap-2">
+<span class="material-symbols-outlined text-primary text-[14px] mt-0.5">check</span>
+<span>Foto bukti harus menampilkan <strong class="text-on-surface font-semibold">Tanggal, Waktu, Nominal</strong>, dan <strong class="text-on-surface font-semibold">Nomor Referensi</strong>.</span>
+</li>
+<li class="flex items-start gap-2">
+<span class="material-symbols-outlined text-primary text-[14px] mt-0.5">check</span>
+<span>Bukan tangkapan layar saat proses kirim / status 'Sedang Diproses'.</span>
+</li>
+</ul>
+</div>
+<!-- 6. Bottom Action Controls & Assurance -->
+<div class="pt-2 space-y-3">
+<button class="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-primary text-on-primary font-headline font-semibold text-sm shadow-md active:scale-[0.98] transition-all" id="submitBtn" onclick="handleSubmitPayment()" type="button">
+<span class="material-symbols-outlined text-[18px]">send</span>
+<span>Kirim Bukti Pembayaran</span>
+</button>
+<button class="w-full py-2.5 text-center text-xs font-semibold text-on-surface-variant hover:text-on-surface transition-colors" onclick="window.history.back()" type="button">
+        Batalkan &amp; Kembali
+      </button>
+<!-- Security / Turnaround Assurance Banner -->
+<div class="flex items-center justify-center gap-1.5 text-center text-[11px] text-on-surface-variant/90 px-4">
+<span class="material-symbols-outlined text-[15px] text-secondary">verified_user</span>
+<span>Verifikasi manual diproses 1x24 jam kerja oleh pengelola</span>
+</div>
+</div>
+</div>
+<!-- Interactive Feedback Toast -->
+<div class="fixed bottom-6 left-1/2 -translate-x-1/2 px-4 py-2.5 rounded-lg bg-inverse-surface text-inverse-on-surface text-xs font-medium shadow-lg transition-all duration-300 opacity-0 pointer-events-none z-50 flex items-center gap-2 max-w-[90%]" id="feedbackToast">
+<span class="material-symbols-outlined text-[16px] text-primary-fixed" id="toastIcon">info</span>
+<span id="toastMessage">Pesan informasi</span>
+</div>
+</div>
+<script>
+  // Quick Copy Nomor Rekening
+  function copyAccountNumber() {
+    const accNum = document.getElementById('accountNumber').innerText.replace(/\s+/g, '');
+    navigator.clipboard.writeText(accNum).then(() => {
+      const copyBtn = document.getElementById('copyBtn');
+      const copyIcon = document.getElementById('copyIcon');
+      const copyLabel = document.getElementById('copyLabel');
+
+      copyIcon.innerText = 'check';
+      copyLabel.innerText = 'Tersalin';
+      copyBtn.classList.remove('bg-primary-fixed', 'text-on-primary-fixed');
+      copyBtn.classList.add('bg-secondary-container', 'text-on-secondary-container');
+
+      showToast('Nomor rekening BCA tersalin ke clipboard!', 'check_circle');
+
+      setTimeout(() => {
+        copyIcon.innerText = 'content_copy';
+        copyLabel.innerText = 'Salin';
+        copyBtn.classList.remove('bg-secondary-container', 'text-on-secondary-container');
+        copyBtn.classList.add('bg-primary-fixed', 'text-on-primary-fixed');
+      }, 2500);
+    }).catch(() => {
+      showToast('Gagal menyalin nomor rekening', 'error');
+    });
+  }
+
+  // Trigger File Input Click safely
+  function triggerFileInput(e) {
+    if (e) e.stopPropagation();
+    document.getElementById('slipFileInput').click();
+  }
+
+  // Bind dropzone click to file selector
+  document.getElementById('dropzoneContainer').addEventListener('click', function(e) {
+    // Only trigger if not clicking buttons or if in empty state
+    if (document.getElementById('emptyUploadState').classList.contains('hidden')) {
+      return;
+    }
+    triggerFileInput(e);
+  });
+
+  // Handle File Input Selection
+  function handleFileSelected(event) {
+    const file = event.target.files[0];
+    if (file) {
+      document.getElementById('previewFileName').innerText = file.name;
+      const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
+      document.getElementById('previewFileSize').innerText = `${sizeMb} MB • ${file.type.split('/')[1]?.toUpperCase() || 'FILE'}`;
+      
+      document.getElementById('emptyUploadState').classList.add('hidden');
+      document.getElementById('previewUploadedState').classList.remove('hidden');
+      document.getElementById('previewUploadedState').classList.add('flex');
+      showToast('Bukti transfer siap dikirim!', 'check');
+    }
+  }
+
+  // Remove Uploaded File
+  function removeUploadedFile(e) {
+    if (e) e.stopPropagation();
+    document.getElementById('slipFileInput').value = '';
+    document.getElementById('previewUploadedState').classList.add('hidden');
+    document.getElementById('previewUploadedState').classList.remove('flex');
+    document.getElementById('emptyUploadState').classList.remove('hidden');
+    showToast('Bukti transfer dibatalkan', 'info');
+  }
+
+  // Update Notes Character Counter
+  function updateCharCount(textarea) {
+    const count = textarea.value.length;
+    document.getElementById('notesCount').innerText = `${count}/120`;
+  }
+
+  // Toast Feedback Utility
+  function showToast(message, iconName = 'info') {
+    const toast = document.getElementById('feedbackToast');
+    const toastMessage = document.getElementById('toastMessage');
+    const toastIcon = document.getElementById('toastIcon');
+
+    toastMessage.innerText = message;
+    toastIcon.innerText = iconName;
+    toast.classList.remove('opacity-0', 'pointer-events-none');
+    toast.classList.add('opacity-100');
+
+    setTimeout(() => {
+      toast.classList.remove('opacity-100');
+      toast.classList.add('opacity-0', 'pointer-events-none');
+    }, 2800);
+  }
+
+  // Handle Payment Form Submission
+  function handleSubmitPayment() {
+    const amountVal = document.getElementById('transferAmount').value.trim();
+    const previewVisible = !document.getElementById('previewUploadedState').classList.contains('hidden');
+
+    if (!amountVal) {
+      showToast('Silakan masukkan nominal transfer', 'warning');
+      return;
+    }
+
+    const submitBtn = document.getElementById('submitBtn');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = `
+      <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-on-primary" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      </svg>
+      <span>Mengunggah Bukti...</span>
+    `;
+
+    setTimeout(() => {
+      submitBtn.innerHTML = `
+        <span class="material-symbols-outlined text-[18px]">check_circle</span>
+        <span>Bukti Terkirim!</span>
+      `;
+      submitBtn.classList.remove('bg-primary');
+      submitBtn.classList.add('bg-secondary');
+      showToast('Bukti berhasil dikirim, pengelola akan memverifikasi', 'verified');
+    }, 1200);
+  }
+</script></main></body></html>

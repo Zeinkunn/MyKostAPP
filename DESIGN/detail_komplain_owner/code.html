@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+
+<html lang="id"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_stack" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "on-secondary-fixed-variant": "#2d476f", "surface-dim": "#d7dae3", "surface-container-low": "#f1f3fc", "error": "#ba1a1a", "primary-fixed-dim": "#aac7ff", "on-primary-fixed": "#001b3e", "secondary-fixed": "#d6e3ff", "on-secondary": "#ffffff", "tertiary-container": "#bd5700", "on-background": "#181c22", "surface-container-high": "#e6e8f1", "error-container": "#ffdad6", "secondary-fixed-dim": "#aec7f7", "on-error-container": "#93000a", "on-secondary-fixed": "#001b3d", "on-tertiary": "#ffffff", "on-tertiary-container": "#fffbff", "on-error": "#ffffff", "tertiary-fixed": "#ffdbc9", "surface-container": "#ebedf7", "on-primary-container": "#fefcff", "tertiary": "#964400", "tertiary-fixed-dim": "#ffb68c", "on-tertiary-fixed": "#321200", "secondary": "#465f88", "inverse-primary": "#aac7ff", "secondary-container": "#b6d0ff", "background": "#f9f9ff", "inverse-on-surface": "#eef0fa", "primary": "#005ab4", "primary-container": "#0a73e0", "on-primary-fixed-variant": "#00458d", "surface-container-highest": "#e0e2eb", "outline": "#717785", "surface-variant": "#e0e2eb", "on-surface": "#181c22", "outline-variant": "#c1c6d5", "on-secondary-container": "#3f5881", "primary-fixed": "#d6e3ff", "surface": "#f9f9ff", "surface-tint": "#005db8", "on-primary": "#ffffff", "on-surface-variant": "#414753", "inverse-surface": "#2d3037", "surface-container-lowest": "#ffffff", "surface-bright": "#f9f9ff", "on-tertiary-fixed-variant": "#763400" }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, spacing: {}, fontFamily: { headline: ["Inter"], display: ["Inter"], body: ["Inter"], label: ["Inter"] }, fontSize: {} } } }</script><style>@layer base { html, body { width: 100vw; margin: 0; padding: 0; } body { overscroll-behavior-y: none; } .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); } .pt-safe { padding-top: env(safe-area-inset-top, 0px); } } ::-webkit-scrollbar { display: none; }</style><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head><body class="bg-surface font-body text-on-surface antialiased flex flex-col min-h-screen"><header class="fixed top-0 inset-x-0 z-50 bg-surface/85 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] pt-safe"><div class="h-16 px-4 flex items-center justify-between gap-3"><div class="flex items-center gap-2 min-w-0"><button aria-label="Kembali" class="w-11 h-11 -ml-1 rounded-full flex items-center justify-center text-on-surface hover:bg-surface-container transition-colors" onclick="history.back()"><span class="material-symbols-outlined text-[24px]">arrow_back</span></button><h1 class="text-base font-headline font-semibold text-on-surface truncate tracking-tight">Detail Kamar</h1></div><div class="flex items-center gap-1 shrink-0"><button aria-label="Bagikan info kamar" class="w-11 h-11 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors"><span class="material-symbols-outlined text-[22px]">share</span></button><button aria-label="Edit kamar" class="w-11 h-11 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors"><span class="material-symbols-outlined text-[22px]">edit</span></button><div class="w-8 h-8 ml-1 rounded-full bg-primary flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="flex-1 flex flex-col relative w-full pt-16 pb-safe bg-surface"><div class="flex flex-col w-full pb-32">
+<!-- Top Ticket Meta Bar -->
+<div class="px-5 pt-3 pb-2 flex flex-col gap-2">
+<div class="flex items-center justify-between gap-2 flex-wrap">
+<div class="flex items-center gap-2">
+<span class="px-2.5 py-1 rounded-full text-xs font-semibold tracking-wide bg-secondary-container text-on-secondary-container">
+          Pendingin Ruangan (AC)
+        </span>
+<span class="text-xs font-medium text-on-surface-variant font-mono">
+          #KMP-2024-1024
+        </span>
+</div>
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-error-container text-on-error-container text-xs font-semibold shadow-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-error animate-pulse"></span>
+        Urgensi Tinggi
+      </div>
+</div>
+</div>
+<div class="px-5 space-y-4 pt-1">
+<!-- HERO/PROMINENT CARD: Status Penanganan Tiket -->
+<div class="bg-surface-container-lowest rounded-xl p-4 shadow-md space-y-3 relative overflow-hidden">
+<div class="absolute -right-6 -top-6 w-24 h-24 bg-primary/5 rounded-full blur-xl pointer-events-none"></div>
+<div class="flex items-start justify-between gap-2">
+<div>
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-primary text-[20px]">sync_alt</span>
+<h2 class="text-sm font-semibold text-on-surface tracking-tight">Status Penanganan Tiket</h2>
+</div>
+<p class="text-xs text-on-surface-variant mt-0.5">
+            Ubah status untuk mengupdate progress tiket secara real-time ke penghuni.
+          </p>
+</div>
+</div>
+<!-- Interactive Status Selector Pill/Card Group -->
+<div class="bg-surface-container-low p-1.5 rounded-lg flex items-center justify-between gap-1.5" id="statusButtonGroup">
+<button class="status-btn flex-1 py-2.5 px-2 rounded-lg flex items-center justify-center gap-1.5 text-xs font-semibold transition-all duration-200 bg-surface-container-lowest text-tertiary-container shadow-sm" onclick="selectStatus('Baru', this)" type="button">
+<span class="w-2 h-2 rounded-full bg-tertiary-container"></span>
+<span>Baru</span>
+</button>
+<button class="status-btn flex-1 py-2.5 px-2 rounded-lg flex items-center justify-center gap-1.5 text-xs font-semibold text-on-surface-variant hover:text-on-surface transition-all duration-200" onclick="selectStatus('Diproses', this)" type="button">
+<span class="w-2 h-2 rounded-full bg-primary opacity-60"></span>
+<span>Diproses</span>
+</button>
+<button class="status-btn flex-1 py-2.5 px-2 rounded-lg flex items-center justify-center gap-1.5 text-xs font-semibold text-on-surface-variant hover:text-on-surface transition-all duration-200" onclick="selectStatus('Selesai', this)" type="button">
+<span class="w-2 h-2 rounded-full bg-secondary-container opacity-60"></span>
+<span>Selesai</span>
+</button>
+</div>
+<!-- Status Explanation Box -->
+<div class="bg-tertiary-fixed/30 rounded-lg p-2.5 flex items-center gap-2" id="statusContextMsg">
+<span class="material-symbols-outlined text-tertiary text-[18px] shrink-0">info</span>
+<p class="text-xs text-on-tertiary-fixed-variant leading-tight">
+          Tiket baru diterima. Siap ditugaskan ke teknisi atau dikonfirmasi ke penghuni.
+        </p>
+</div>
+</div>
+<!-- Info Pelapor & Unit Kost -->
+<div class="bg-surface-container-lowest rounded-xl p-4 shadow-sm space-y-3.5">
+<div class="flex items-start justify-between">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-full bg-primary-fixed flex items-center justify-center text-on-primary-fixed font-bold text-base shadow-inner shrink-0">
+            DP
+          </div>
+<div class="min-w-0">
+<h3 class="text-sm font-semibold text-on-surface leading-tight">Dimas Prasetya</h3>
+<p class="text-xs text-primary font-medium mt-0.5 flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">meeting_room</span>
+              Kamar 204 • Lantai 2 (Deluxe Queen)
+            </p>
+<p class="text-[11px] text-on-surface-variant mt-0.5 flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px]">schedule</span>
+              Hari ini, 24 Okt 2024 • 08:30 WIB (1 jam lalu)
+            </p>
+</div>
+</div>
+</div>
+<!-- Quick Action Buttons -->
+<div class="grid grid-cols-2 gap-2 pt-1">
+<a class="flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-surface-container hover:bg-surface-container-high transition-colors text-on-surface text-xs font-medium" href="https://wa.me/6281234567890?text=Halo%20Dimas,%20terkait%20komplain%20AC%20Kamar%20204" target="_blank">
+<span class="material-symbols-outlined text-primary text-[18px]">chat</span>
+          WhatsApp
+        </a>
+<a class="flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-surface-container hover:bg-surface-container-high transition-colors text-on-surface text-xs font-medium" href="tel:+6281234567890">
+<span class="material-symbols-outlined text-secondary text-[18px]">call</span>
+          Telepon
+        </a>
+</div>
+</div>
+<!-- Rincian Masalah & Deskripsi Lengkap -->
+<div class="bg-surface-container-lowest rounded-xl p-4 shadow-sm space-y-2.5">
+<div class="flex items-center gap-2">
+<div class="w-7 h-7 rounded-lg bg-error-container text-on-error-container flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[17px]">water_damage</span>
+</div>
+<h3 class="text-sm font-semibold text-on-surface">AC Bocor &amp; Menetes Deras ke Meja Kerja</h3>
+</div>
+<div class="bg-surface-container-low rounded-lg p-3">
+<p class="text-xs leading-relaxed text-on-surface-variant font-normal">
+          “Air tetesan AC mulai bocor deras sejak tengah malam tadi sekitar jam 02.00 WIB. Tetesan mengenai meja belajar dan membasahi berkas kerja serta laptop. Sudah coba saya tampung pakai ember kecil tapi cepat penuh. Mohon bantuan teknisi segera untuk perbaikan.”
+        </p>
+</div>
+</div>
+<!-- Galeri Foto Lampiran Masalah -->
+<div class="bg-surface-container-lowest rounded-xl p-4 shadow-sm space-y-3">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-secondary text-[18px]">photo_library</span>
+<h3 class="text-xs font-semibold text-on-surface uppercase tracking-wider">Foto Lampiran Penghuni (2 Foto)</h3>
+</div>
+<span class="text-[11px] text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px]">touch_app</span>
+          Ketuk untuk perbesar
+        </span>
+</div>
+<div class="grid grid-cols-2 gap-2.5">
+<!-- Photo 1 -->
+<div class="group relative rounded-lg overflow-hidden bg-surface-container-high aspect-[4/3] cursor-pointer shadow-sm" onclick="showPhotoPreview(1)">
+<img alt="Tetesan AC Indoor" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" data-alt="Close up photograph of a wall-mounted indoor air conditioner split unit in a modern boarding house room with visible water droplets seeping along the lower plastic seam, ambient daylight soft shadow, realistic maintenance issue report" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDF4FmvUDipfIw8Kl6pmJhHrclGVz2fuGnsmvPTU82qsmmZllrLaq4ix6Y2r_kINkLux9ddzbpG7HiRFH0AgQauhxgo4pT4y1GJpf8zn8oiAVYd-wo-JFKi0qmsYcwcSKA2mE2CAQA9wAuk0ZgQympr0KD_gQeiLGXcecDVsO9ltzU2ZHJc9sWT8-VO2sbNcf2dNzQePQKJyJD2ZmUjItTuWj3I3R3X6vFLXknqUA8cGc0zL0J3JzI5bg"/>
+<div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-inverse-surface/80 via-inverse-surface/30 to-transparent p-2 flex items-center justify-between">
+<span class="text-[10px] font-medium text-inverse-on-surface truncate">Unit Indoor AC</span>
+<span class="material-symbols-outlined text-inverse-on-surface text-[14px]">fullscreen</span>
+</div>
+</div>
+<!-- Photo 2 -->
+<div class="group relative rounded-lg overflow-hidden bg-surface-container-high aspect-[4/3] cursor-pointer shadow-sm" onclick="showPhotoPreview(2)">
+<img alt="Ember Penampung &amp; Meja Basah" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" data-alt="High angle shot of a wooden work desk inside a student boarding room showing a small bucket filled with dripping water next to wet documents and moisture stains, daylight interior, clean crisp focus" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDZbV2vuQu_4LKR3rOhaSEl4r3KpCwKuBq-IomjDopeF5hhN0O5Zl7jQHFZWlVMp7QMluF6NfyM4WgmGCzvxfM9D94QFI2sNzF_Qxu_SwutN5dEjqzGQ2kOq9xGNz4E3mfmVSVFgIRm1V_YCC8RiGnJSH5sXqiaI8rNZm-9NubnyAS6FLQ4oJHxWXtsVUa_NeKOAL4FtqUM9BToIL3i8QiMgSN3XaDYaytkv87wE96SnPcvt6Y9oWNJSw"/>
+<div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-inverse-surface/80 via-inverse-surface/30 to-transparent p-2 flex items-center justify-between">
+<span class="text-[10px] font-medium text-inverse-on-surface truncate">Area Meja &amp; Ember</span>
+<span class="material-symbols-outlined text-inverse-on-surface text-[14px]">fullscreen</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Penugasan Teknisi & Estimasi -->
+<div class="bg-surface-container-lowest rounded-xl p-4 shadow-sm space-y-3">
+<div class="flex items-center justify-between">
+<h3 class="text-xs font-semibold text-on-surface uppercase tracking-wider flex items-center gap-1.5">
+<span class="material-symbols-outlined text-primary text-[18px]">build</span>
+          Penugasan Teknisi
+        </h3>
+<button class="text-xs font-semibold text-primary hover:underline flex items-center gap-0.5" type="button">
+          Ganti
+          <span class="material-symbols-outlined text-[14px]">chevron_right</span>
+</button>
+</div>
+<div class="flex items-center justify-between p-3 rounded-lg bg-surface-container-low">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-secondary-fixed flex items-center justify-center text-on-secondary-fixed">
+<span class="material-symbols-outlined text-[20px]">engineering</span>
+</div>
+<div>
+<h4 class="text-xs font-semibold text-on-surface">Pak Joko</h4>
+<p class="text-[11px] text-on-surface-variant">Teknisi Griya Asri Harmoni</p>
+</div>
+</div>
+<div class="text-right">
+<span class="inline-block px-2 py-0.5 rounded text-[10px] font-semibold bg-primary-fixed text-on-primary-fixed mb-0.5">
+            Estimasi
+          </span>
+<p class="text-xs font-medium text-on-surface">Hari ini, 14:00 WIB</p>
+</div>
+</div>
+</div>
+<!-- Form Tindak Lanjut Admin -->
+<div class="bg-surface-container-lowest rounded-xl p-4 shadow-sm space-y-2">
+<div class="flex items-center justify-between">
+<label class="text-xs font-semibold text-on-surface uppercase tracking-wider flex items-center gap-1.5" for="catatanInternal">
+<span class="material-symbols-outlined text-secondary text-[18px]">edit_note</span>
+          Catatan Internal Pengelola
+        </label>
+<span class="text-[11px] text-on-surface-variant">Privat</span>
+</div>
+<textarea class="w-full bg-surface-container-low rounded-lg p-3 text-xs text-on-surface placeholder:text-outline focus:outline-none focus:bg-surface-container-lowest focus:shadow-inner transition-all leading-relaxed" id="catatanInternal" placeholder="Tuliskan catatan teknis atau koordinasi..." rows="3">Teknisi Pak Joko sudah dihubungi via WA, estimasi tiba pukul 14:00 WIB untuk cek pipa drainase dan filter indoor.</textarea>
+<p class="text-[11px] text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px]">lock</span>
+        Catatan ini hanya dapat dilihat oleh Owner dan staf pengelola.
+      </p>
+</div>
+</div>
+<!-- STICKY BOTTOM ACTION BAR -->
+<div class="fixed bottom-0 inset-x-0 bg-surface/90 backdrop-blur-md p-4 pb-safe shadow-[0_-4px_16px_rgba(0,0,0,0.06)] z-40">
+<div class="max-w-md mx-auto space-y-2">
+<button class="w-full h-12 bg-primary hover:bg-primary-container text-on-primary font-semibold text-sm rounded-lg flex items-center justify-center gap-2 shadow-md active:scale-[0.99] transition-all" id="btnSimpan" onclick="handleSimpanPerubahan()" type="button">
+<span class="material-symbols-outlined text-[18px]">check_circle</span>
+<span>Simpan Perubahan</span>
+</button>
+<div class="flex items-center justify-center gap-3 pt-0.5">
+<button class="text-xs text-on-surface-variant hover:text-primary font-medium py-1 px-2 rounded transition-colors" onclick="handleTugaskanLain()" type="button">
+          Tugaskan Teknisi Lain
+        </button>
+<span class="text-outline-variant text-xs">•</span>
+<button class="text-xs text-outline hover:text-error font-medium py-1 px-2 rounded transition-colors" onclick="history.back()" type="button">
+          Batal
+        </button>
+</div>
+</div>
+</div>
+<!-- Toast Notification (Hidden by default) -->
+<div class="fixed top-20 left-1/2 -translate-x-1/2 bg-inverse-surface text-inverse-on-surface px-4 py-2.5 rounded-lg shadow-xl text-xs font-medium z-50 flex items-center gap-2 opacity-0 pointer-events-none transition-all duration-300 transform -translate-y-2" id="toastSuccess">
+<span class="material-symbols-outlined text-[18px] text-secondary-fixed">task_alt</span>
+<span id="toastMessage">Perubahan status tiket berhasil disimpan!</span>
+</div>
+</div>
+<script>
+  let currentStatus = 'Baru';
+
+  function selectStatus(status, element) {
+    currentStatus = status;
+    const buttons = document.querySelectorAll('#statusButtonGroup .status-btn');
+    buttons.forEach(btn => {
+      btn.className = 'status-btn flex-1 py-2.5 px-2 rounded-lg flex items-center justify-center gap-1.5 text-xs font-semibold text-on-surface-variant hover:text-on-surface transition-all duration-200';
+      const dot = btn.querySelector('span:first-child');
+      if (dot) dot.classList.add('opacity-60');
+    });
+
+    const infoBox = document.getElementById('statusContextMsg');
+    const infoText = infoBox.querySelector('p');
+    const infoIcon = infoBox.querySelector('span');
+
+    if (status === 'Baru') {
+      element.className = 'status-btn flex-1 py-2.5 px-2 rounded-lg flex items-center justify-center gap-1.5 text-xs font-semibold bg-surface-container-lowest text-tertiary-container shadow-sm transition-all duration-200';
+      element.querySelector('span:first-child').className = 'w-2 h-2 rounded-full bg-tertiary-container';
+      infoBox.className = 'bg-tertiary-fixed/30 rounded-lg p-2.5 flex items-center gap-2';
+      infoIcon.className = 'material-symbols-outlined text-tertiary text-[18px] shrink-0';
+      infoIcon.textContent = 'info';
+      infoText.className = 'text-xs text-on-tertiary-fixed-variant leading-tight';
+      infoText.textContent = 'Tiket baru diterima. Siap ditugaskan ke teknisi atau dikonfirmasi ke penghuni.';
+    } else if (status === 'Diproses') {
+      element.className = 'status-btn flex-1 py-2.5 px-2 rounded-lg flex items-center justify-center gap-1.5 text-xs font-semibold bg-surface-container-lowest text-primary shadow-sm transition-all duration-200';
+      element.querySelector('span:first-child').className = 'w-2 h-2 rounded-full bg-primary';
+      infoBox.className = 'bg-primary-fixed/40 rounded-lg p-2.5 flex items-center gap-2';
+      infoIcon.className = 'material-symbols-outlined text-primary text-[18px] shrink-0';
+      infoIcon.textContent = 'pending_actions';
+      infoText.className = 'text-xs text-on-primary-fixed-variant leading-tight';
+      infoText.textContent = 'Tiket sedang ditangani. Penghuni menerima notifikasi estimasi pengerjaan.';
+    } else if (status === 'Selesai') {
+      element.className = 'status-btn flex-1 py-2.5 px-2 rounded-lg flex items-center justify-center gap-1.5 text-xs font-semibold bg-surface-container-lowest text-secondary-container shadow-sm transition-all duration-200';
+      element.querySelector('span:first-child').className = 'w-2 h-2 rounded-full bg-secondary';
+      infoBox.className = 'bg-surface-container-high rounded-lg p-2.5 flex items-center gap-2';
+      infoIcon.className = 'material-symbols-outlined text-secondary text-[18px] shrink-0';
+      infoIcon.textContent = 'verified';
+      infoText.className = 'text-xs text-on-surface-variant leading-tight';
+      infoText.textContent = 'Pekerjaan rampung. Tiket ditutup dan ulasan kepuasan dikirimkan ke penghuni.';
+    }
+  }
+
+  function handleSimpanPerubahan() {
+    const btn = document.getElementById('btnSimpan');
+    const toast = document.getElementById('toastSuccess');
+    const toastMsg = document.getElementById('toastMessage');
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span><span>Menyimpan...</span>';
+
+    setTimeout(() => {
+      btn.disabled = false;
+      btn.innerHTML = '<span class="material-symbols-outlined text-[18px]">check_circle</span><span>Simpan Perubahan</span>';
+      
+      toastMsg.textContent = `Status komplain Kamar 204 diperbarui ke "${currentStatus}"`;
+      toast.classList.remove('opacity-0', 'pointer-events-none', '-translate-y-2');
+      toast.classList.add('opacity-100', 'translate-y-0');
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'pointer-events-none', '-translate-y-2');
+        toast.classList.remove('opacity-100', 'translate-y-0');
+      }, 2500);
+    }, 600);
+  }
+
+  function handleTugaskanLain() {
+    const toast = document.getElementById('toastSuccess');
+    const toastMsg = document.getElementById('toastMessage');
+    toastMsg.textContent = 'Membuka daftar kontak teknisi mitra...';
+    toast.classList.remove('opacity-0', 'pointer-events-none', '-translate-y-2');
+    toast.classList.add('opacity-100', 'translate-y-0');
+    setTimeout(() => {
+      toast.classList.add('opacity-0', 'pointer-events-none', '-translate-y-2');
+      toast.classList.remove('opacity-100', 'translate-y-0');
+    }, 2000);
+  }
+
+  function showPhotoPreview(index) {
+    const toast = document.getElementById('toastSuccess');
+    const toastMsg = document.getElementById('toastMessage');
+    toastMsg.textContent = `Membuka tampilan penuh Foto Lampiran #${index}...`;
+    toast.classList.remove('opacity-0', 'pointer-events-none', '-translate-y-2');
+    toast.classList.add('opacity-100', 'translate-y-0');
+    setTimeout(() => {
+      toast.classList.add('opacity-0', 'pointer-events-none', '-translate-y-2');
+      toast.classList.remove('opacity-100', 'translate-y-0');
+    }, 1800);
+  }
+</script></main></body></html>
