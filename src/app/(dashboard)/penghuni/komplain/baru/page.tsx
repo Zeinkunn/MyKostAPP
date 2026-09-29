@@ -1,12 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Camera, Send, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Camera, Send, CheckCircle2, Image as ImageIcon } from 'lucide-react';
 import imageCompression from 'browser-image-compression';
 
 export default function AjukanKomplainBaruPage() {
   const router = useRouter();
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
+
   const [kategori, setKategori] = useState('AC / Pendingin Ruangan');
   const [deskripsi, setDeskripsi] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -131,42 +134,77 @@ export default function AjukanKomplainBaruPage() {
               />
             </div>
 
+            {/* Hidden Input Elements */}
+            <input
+              ref={cameraInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={handleFileChange}
+              className="hidden"
+            />
+            <input
+              ref={galleryInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+              className="hidden"
+            />
+
             <div>
               <label className="font-semibold text-slate-700">Lampirkan Foto Masalah (Opsional)</label>
-              <div className="relative border-2 border-dashed border-slate-300 rounded-2xl p-4 text-center bg-slate-50 hover:bg-slate-100 transition-colors mt-1">
-                {previewUrl ? (
-                  <div className="space-y-2">
-                    <img
-                      src={previewUrl}
-                      alt="Preview Kerusakan"
-                      className="max-h-48 mx-auto rounded-xl object-contain shadow-sm"
-                    />
-                    <p className="text-[11px] text-emerald-700 font-semibold">
-                      {compressing ? 'Mengompresi foto...' : 'Foto terlampir'}
-                    </p>
-                  </div>
-                ) : (
-                  <div className="py-4 space-y-2">
-                    <Camera className="w-7 h-7 text-blue-600 mx-auto" />
-                    <p className="font-semibold text-slate-800">Ambil Foto Masalah</p>
-                    <p className="text-[11px] text-slate-400">JPG, PNG (Maks 5MB)</p>
-                  </div>
-                )}
 
-                <input
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  onChange={handleFileChange}
-                  className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                />
-              </div>
+              {previewUrl ? (
+                <div className="border-2 border-dashed border-blue-300 rounded-2xl p-4 text-center bg-blue-50/40 space-y-2 mt-1">
+                  <img
+                    src={previewUrl}
+                    alt="Preview Kerusakan"
+                    className="max-h-48 mx-auto rounded-xl object-contain shadow-sm"
+                  />
+                  <p className="text-[11px] text-blue-700 font-semibold">
+                    {compressing ? 'Mengompresi foto...' : 'Foto terlampir'}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => galleryInputRef.current?.click()}
+                    className="text-xs text-blue-600 font-semibold hover:underline"
+                  >
+                    Ganti Foto / Screenshot Lain
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-3 mt-1">
+                  <button
+                    type="button"
+                    onClick={() => cameraInputRef.current?.click()}
+                    className="p-4 border-2 border-dashed border-slate-300 hover:border-blue-500 rounded-2xl bg-slate-50 hover:bg-blue-50/50 transition-all text-center space-y-1 group"
+                  >
+                    <div className="w-9 h-9 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mx-auto group-hover:scale-110 transition-transform">
+                      <Camera className="w-4 h-4" />
+                    </div>
+                    <p className="font-bold text-slate-800">Kamera HP</p>
+                    <p className="text-[10px] text-slate-400">Foto Langsung</p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => galleryInputRef.current?.click()}
+                    className="p-4 border-2 border-dashed border-slate-300 hover:border-emerald-500 rounded-2xl bg-slate-50 hover:bg-emerald-50/50 transition-all text-center space-y-1 group"
+                  >
+                    <div className="w-9 h-9 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto group-hover:scale-110 transition-transform">
+                      <ImageIcon className="w-4 h-4" />
+                    </div>
+                    <p className="font-bold text-slate-800">Galeri / Screenshot</p>
+                    <p className="text-[10px] text-slate-400">Pilih dari HP</p>
+                  </button>
+                </div>
+              )}
             </div>
 
             <button
               type="submit"
               disabled={loading || compressing || !deskripsi.trim()}
-              className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold text-xs rounded-xl shadow-md shadow-blue-600/20 transition-all flex items-center justify-center gap-2"
+              className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold text-xs rounded-xl shadow-md shadow-blue-600/20 transition-all flex items-center justify-center gap-2 mt-2"
             >
               {loading ? (
                 <span>Mengirim...</span>

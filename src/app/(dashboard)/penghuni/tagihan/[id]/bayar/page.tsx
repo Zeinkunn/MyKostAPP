@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { Camera, Upload, ArrowLeft, CheckCircle, Image as ImageIcon } from 'lucide-react';
 import imageCompression from 'browser-image-compression';
@@ -9,6 +9,9 @@ export default function UploadBuktiBayarPage() {
   const router = useRouter();
   const params = useParams();
   const tagihanId = params.id as string;
+
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -92,7 +95,7 @@ export default function UploadBuktiBayarPage() {
         <div>
           <h1 className="text-xl font-bold text-slate-900">Upload Bukti Pembayaran</h1>
           <p className="text-xs text-slate-500 mt-1">
-            Ambil foto resi transfer atau bukti bayar menggunakan kamera HP Anda.
+            Ambil foto dari kamera langsung atau pilih screenshot dari galeri HP Anda.
           </p>
         </div>
 
@@ -121,46 +124,82 @@ export default function UploadBuktiBayarPage() {
               </select>
             </div>
 
-            {/* Camera Input Button / Image Preview */}
-            <div className="space-y-2">
+            {/* Hidden Input Elements */}
+            <input
+              ref={cameraInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={handleFileChange}
+              className="hidden"
+            />
+            <input
+              ref={galleryInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+              className="hidden"
+            />
+
+            {/* Image Preview or Selector */}
+            <div className="space-y-3">
               <label className="text-xs font-semibold text-slate-700">Foto Resi / Bukti Transfer</label>
 
-              <div className="relative border-2 border-dashed border-slate-300 rounded-2xl p-4 text-center bg-slate-50 hover:bg-slate-100 transition-colors">
-                {previewUrl ? (
-                  <div className="space-y-2">
-                    <img
-                      src={previewUrl}
-                      alt="Preview Bukti"
-                      className="max-h-56 mx-auto rounded-xl object-contain shadow-sm"
-                    />
-                    <p className="text-[11px] text-emerald-700 font-semibold">
-                      {compressing ? 'Mengompresi gambar...' : 'Foto siap dikirim'}
-                    </p>
-                  </div>
-                ) : (
-                  <div className="py-6 space-y-2">
-                    <Camera className="w-8 h-8 text-blue-600 mx-auto" />
-                    <p className="text-xs font-semibold text-slate-800">
-                      Ambil Foto via Kamera atau Galeri HP
-                    </p>
-                    <p className="text-[11px] text-slate-400">JPG, PNG (Maks 5MB)</p>
-                  </div>
-                )}
+              {previewUrl ? (
+                <div className="border-2 border-dashed border-emerald-300 rounded-2xl p-4 text-center bg-emerald-50/40 space-y-2">
+                  <img
+                    src={previewUrl}
+                    alt="Preview Bukti"
+                    className="max-h-56 mx-auto rounded-xl object-contain shadow-sm"
+                  />
+                  <p className="text-[11px] text-emerald-700 font-semibold">
+                    {compressing ? 'Mengompresi foto...' : 'Foto siap dikirim'}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => galleryInputRef.current?.click()}
+                    className="text-xs text-blue-600 font-semibold hover:underline"
+                  >
+                    Ganti Foto / Screenshot Lain
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => cameraInputRef.current?.click()}
+                    className="p-5 border-2 border-dashed border-slate-300 hover:border-blue-500 rounded-2xl bg-slate-50 hover:bg-blue-50/50 transition-all text-center space-y-2 group"
+                  >
+                    <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mx-auto group-hover:scale-110 transition-transform">
+                      <Camera className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-slate-800">Kamera HP</p>
+                      <p className="text-[10px] text-slate-400 mt-0.5">Foto Langsung</p>
+                    </div>
+                  </button>
 
-                <input
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  onChange={handleFileChange}
-                  className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                />
-              </div>
+                  <button
+                    type="button"
+                    onClick={() => galleryInputRef.current?.click()}
+                    className="p-5 border-2 border-dashed border-slate-300 hover:border-emerald-500 rounded-2xl bg-slate-50 hover:bg-emerald-50/50 transition-all text-center space-y-2 group"
+                  >
+                    <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto group-hover:scale-110 transition-transform">
+                      <ImageIcon className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-slate-800">Galeri / Screenshot</p>
+                      <p className="text-[10px] text-slate-400 mt-0.5">Pilih dari HP</p>
+                    </div>
+                  </button>
+                </div>
+              )}
             </div>
 
             <button
               type="submit"
               disabled={loading || compressing || !selectedFile}
-              className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-semibold text-xs rounded-xl shadow-md shadow-emerald-600/20 transition-all flex items-center justify-center gap-2"
+              className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-semibold text-xs rounded-xl shadow-md shadow-emerald-600/20 transition-all flex items-center justify-center gap-2 mt-2"
             >
               {loading ? (
                 <span>Mengirim...</span>
