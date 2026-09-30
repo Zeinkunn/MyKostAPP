@@ -100,7 +100,7 @@ export async function POST(req: NextRequest) {
 // Verification by Admin (Approve / Reject)
 export async function PUT(req: NextRequest) {
   try {
-    await requireRoleApi([Role.OWNER, Role.ADMIN]);
+    const session = await requireRoleApi([Role.OWNER, Role.ADMIN]);
     const { id, status_verifikasi } = await req.json();
 
     if (!id || !status_verifikasi) {
@@ -149,7 +149,7 @@ export async function PUT(req: NextRequest) {
 
     // Audit Log (Priority 6)
     await logAktivitas(
-      (await requireRoleApi([Role.OWNER, Role.ADMIN])).id,
+      session.id,
       'verifikasi_pembayaran',
       `Verifikasi pembayaran (${statusText}) periode ${result.tagihan.periode} untuk Kamar ${result.tagihan.kontrak.kamar.nomor_kamar} (${result.tagihan.kontrak.penghuni.nama})`
     );

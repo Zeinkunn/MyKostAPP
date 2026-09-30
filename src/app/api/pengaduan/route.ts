@@ -116,7 +116,7 @@ export async function POST(req: NextRequest) {
 // Update Status & Internal Notes by Admin (Alur 6.3 Step 4)
 export async function PUT(req: NextRequest) {
   try {
-    await requireRoleApi([Role.OWNER, Role.ADMIN]);
+    const session = await requireRoleApi([Role.OWNER, Role.ADMIN]);
     const { id, status, catatan_internal } = await req.json();
 
     if (!id || !status) {
@@ -147,7 +147,6 @@ export async function PUT(req: NextRequest) {
     }
 
     // Audit Log (Priority 6)
-    const session = await requireRoleApi([Role.OWNER, Role.ADMIN]);
     await logAktivitas(
       session.id,
       'update_pengaduan',
