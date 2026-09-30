@@ -36,6 +36,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Nama, Email, Password, dan Role wajib diisi' }, { status: 400 });
     }
 
+    // Poin 2: Validate role must be OWNER or ADMIN only
+    if (![Role.OWNER, Role.ADMIN].includes(role)) {
+      return NextResponse.json(
+        {
+          error:
+            'Role tidak valid untuk endpoint ini. Hanya OWNER atau ADMIN yang bisa dibuat lewat sini — akun Penghuni dibuat lewat proses registrasi mandiri.',
+        },
+        { status: 400 }
+      );
+    }
+
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) {
       return NextResponse.json({ error: 'Email ini sudah terdaftar' }, { status: 400 });
