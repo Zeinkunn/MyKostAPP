@@ -110,6 +110,10 @@ model Kontrak {
   tanggal_mulai         DateTime
   tanggal_selesai       DateTime
   harga_sewa_disepakati Decimal       @db.Decimal(12, 2)
+  deposit_awal          Decimal?      @db.Decimal(12, 2)
+  potongan_deposit      Decimal?      @db.Decimal(12, 2)
+  catatan_potongan      String?
+  tanggal_checkout      DateTime?
   status                StatusKontrak @default(AKTIF)
   dokumen_url           String?
 

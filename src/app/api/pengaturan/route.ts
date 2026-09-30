@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { ApiAuthError, requireAuthApi, requireRoleApi } from '@/lib/rbac';
 import { Role } from '@prisma/client';
+import { logAktivitas } from '@/lib/log';
 
 export async function GET() {
   try {
@@ -33,7 +34,7 @@ export async function GET() {
 
 export async function PUT(req: NextRequest) {
   try {
-    await requireRoleApi([Role.OWNER, Role.ADMIN]);
+    const session = await requireRoleApi([Role.OWNER, Role.ADMIN]);
     const { harga_default, denda_per_hari, wa_template } = await req.json();
 
     const updated = await prisma.pengaturan.upsert({
@@ -50,6 +51,12 @@ export async function PUT(req: NextRequest) {
         wa_template: wa_template || '',
       },
     });
+
+    await logAktivitas(
+      session.id,
+      'update_pengaturan',
+      `Memperbarui pengaturan sistem (denda per hari: Rp ${updated.denda_per_hari})`
+    );
 
     return NextResponse.json(updated);
   } catch (error: any) {

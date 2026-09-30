@@ -16,6 +16,7 @@ interface PenghuniItem {
     tanggal_mulai: string;
     tanggal_selesai: string;
     harga_sewa_disepakati: number;
+    deposit_awal?: number;
     status: string;
     kamar: { nomor_kamar: string; tipe: string };
   }>;
@@ -48,6 +49,7 @@ export default function OwnerPenghuniPage() {
       .toISOString()
       .split('T')[0],
     harga_sewa_disepakati: '',
+    deposit_awal: '',
   });
 
   // Modal State for Checkout (B4)
@@ -138,6 +140,7 @@ export default function OwnerPenghuniPage() {
           tanggal_mulai: formData.tanggal_mulai,
           tanggal_selesai: formData.tanggal_selesai,
           harga_sewa_disepakati: formData.harga_sewa_disepakati,
+          deposit_awal: formData.deposit_awal || null,
         }),
       });
 
@@ -146,6 +149,9 @@ export default function OwnerPenghuniPage() {
         setToastMessage('Penghuni & Kontrak sewa berhasil dibuat! Pesan instruksi WhatsApp telah dikirim.');
         setTimeout(() => setToastMessage(null), 6000);
         fetchData();
+      } else {
+        const errorData = await resKontrak.json();
+        alert(errorData.error || 'Gagal membuat kontrak sewa');
       }
     } catch (err) {
       console.error('Onboarding error:', err);
@@ -163,7 +169,7 @@ export default function OwnerPenghuniPage() {
     setIsCheckoutModalOpen(true);
   };
 
-  // Handle Checkout Submit (B4)
+  // Handle Checkout Submit (B4 & Priority 5)
   const handleCheckoutSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedKontrak) return;
@@ -290,6 +296,11 @@ export default function OwnerPenghuniPage() {
                       <strong className="text-emerald-700">
                         {formatRupiah(activeKontrak.harga_sewa_disepakati)} / bulan
                       </strong>
+                      {activeKontrak.deposit_awal && (
+                        <span className="ml-2 text-slate-500">
+                          (Deposit: {formatRupiah(activeKontrak.deposit_awal)})
+                        </span>
+                      )}
                     </p>
                     <div className="pt-1">
                       <button
@@ -309,7 +320,7 @@ export default function OwnerPenghuniPage() {
         </div>
       )}
 
-      {/* Modal Checkout UI (B4) */}
+      {/* Modal Checkout UI (B4 & Priority 5) */}
       {isCheckoutModalOpen && selectedKontrak && (
         <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-md rounded-2xl p-6 shadow-2xl space-y-4">
@@ -493,15 +504,28 @@ export default function OwnerPenghuniPage() {
                 </div>
               </div>
 
-              <div>
-                <label className="font-semibold text-slate-700">Harga Sewa Disepakati (Rp/bulan)</label>
-                <input
-                  type="number"
-                  required
-                  value={formData.harga_sewa_disepakati}
-                  onChange={(e) => setFormData({ ...formData, harga_sewa_disepakati: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none"
-                />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-semibold text-slate-700">Harga Sewa (Rp/bulan)</label>
+                  <input
+                    type="number"
+                    required
+                    value={formData.harga_sewa_disepakati}
+                    onChange={(e) => setFormData({ ...formData, harga_sewa_disepakati: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-semibold text-slate-700">Deposit Awal (Rp) — Opsional</label>
+                  <input
+                    type="number"
+                    value={formData.deposit_awal}
+                    onChange={(e) => setFormData({ ...formData, deposit_awal: e.target.value })}
+                    placeholder="misal: 500000"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none"
+                  />
+                </div>
               </div>
 
               <div className="p-3 bg-blue-50 text-blue-800 rounded-xl flex items-start gap-2">

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { ApiAuthError, requireAuthApi, requireRoleApi } from '@/lib/rbac';
 import { Role, StatusKamar } from '@prisma/client';
+import { logAktivitas } from '@/lib/log';
 
 export async function GET(req: NextRequest) {
   try {
@@ -54,7 +55,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    await requireRoleApi([Role.OWNER, Role.ADMIN]);
+    const session = await requireRoleApi([Role.OWNER, Role.ADMIN]);
     const { properti_id, nomor_kamar, tipe, harga_sewa, fasilitas, status, foto_url } = await req.json();
 
     if (!properti_id || !nomor_kamar || !tipe || !harga_sewa) {
@@ -73,6 +74,12 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    await logAktivitas(
+      session.id,
+      'buat_kamar',
+      `Membuat unit Kamar ${newKamar.nomor_kamar} (${newKamar.tipe})`
+    );
+
     return NextResponse.json(newKamar, { status: 201 });
   } catch (error: any) {
     if (error instanceof ApiAuthError) {
@@ -84,7 +91,7 @@ export async function POST(req: NextRequest) {
 
 export async function PUT(req: NextRequest) {
   try {
-    await requireRoleApi([Role.OWNER, Role.ADMIN]);
+    const session = await requireRoleApi([Role.OWNER, Role.ADMIN]);
     const { id, nomor_kamar, tipe, harga_sewa, fasilitas, status, foto_url } = await req.json();
 
     if (!id) {
@@ -102,6 +109,12 @@ export async function PUT(req: NextRequest) {
         ...(foto_url !== undefined && { foto_url }),
       },
     });
+
+    await logAktivitas(
+      session.id,
+      'update_kamar',
+      `Mengubah data unit Kamar ${updatedKamar.nomor_kamar} (Status: ${updatedKamar.status})`
+    );
 
     return NextResponse.json(updatedKamar);
   } catch (error: any) {

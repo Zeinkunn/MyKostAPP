@@ -3,9 +3,14 @@ import bcrypt from 'bcryptjs';
 import { cookies } from 'next/headers';
 import { Role } from '@prisma/client';
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'development-jwt-secret-key-32-chars-minimum-length'
-);
+const rawSecret = process.env.JWT_SECRET;
+if (!rawSecret || rawSecret.length < 32) {
+  throw new Error(
+    'JWT_SECRET wajib di-set di environment variable dan minimal 32 karakter. ' +
+    'Generate dengan: openssl rand -hex 32'
+  );
+}
+const JWT_SECRET = new TextEncoder().encode(rawSecret);
 
 const COOKIE_NAME = 'mykost_session';
 

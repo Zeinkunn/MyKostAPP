@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { ApiAuthError, requireRoleApi } from '@/lib/rbac';
 import { Role, StatusKamar, StatusKontrak, StatusTagihan } from '@prisma/client';
 import { sendWhatsAppMessage } from '@/lib/fonnte';
+import { logAktivitas } from '@/lib/log';
 
 export async function GET() {
   try {
@@ -27,13 +28,14 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    await requireRoleApi([Role.OWNER, Role.ADMIN]);
+    const session = await requireRoleApi([Role.OWNER, Role.ADMIN]);
     const {
       kamar_id,
       penghuni_id,
       tanggal_mulai,
       tanggal_selesai,
       harga_sewa_disepakati,
+      deposit_awal,
       dokumen_url,
     } = await req.json();
 
@@ -47,10 +49,26 @@ export async function POST(req: NextRequest) {
     const startDate = new Date(tanggal_mulai);
     const endDate = new Date(tanggal_selesai);
     const hargaDecimal = parseFloat(harga_sewa_disepakati);
+    const depositDecimal = deposit_awal ? parseFloat(deposit_awal) : null;
 
     // Business Rule 6.1 Steps:
-    // 1. Transaction to create Kontrak + update Kamar to TERISI + generate first Tagihan
+    // 1. Transaction to check room status, create Kontrak, update Kamar to TERISI, & generate first Tagihan
     const result = await prisma.$transaction(async (tx) => {
+      // Priority 4: Check if room is KOSONG before booking
+      const targetKamar = await tx.kamar.findUnique({
+        where: { id: kamar_id },
+      });
+
+      if (!targetKamar) {
+        throw new Error('Kamar tidak ditemukan');
+      }
+
+      if (targetKamar.status !== StatusKamar.KOSONG) {
+        throw new Error(
+          `Kamar ini sedang tidak tersedia (status saat ini: ${targetKamar.status}), tidak bisa membuat kontrak baru.`
+        );
+      }
+
       // Create Kontrak
       const kontrak = await tx.kontrak.create({
         data: {
@@ -59,6 +77,7 @@ export async function POST(req: NextRequest) {
           tanggal_mulai: startDate,
           tanggal_selesai: endDate,
           harga_sewa_disepakati: hargaDecimal,
+          deposit_awal: depositDecimal,
           status: StatusKontrak.AKTIF,
           dokumen_url,
         },
@@ -108,11 +127,26 @@ export async function POST(req: NextRequest) {
       message: waMessage,
     });
 
+    // Audit Log (Priority 6)
+    await logAktivitas(
+      session.id,
+      'buat_kontrak',
+      `Membuat kontrak sewa baru untuk ${namaPenghuni} di Kamar ${nomorKamar}`
+    );
+
     return NextResponse.json(result, { status: 201 });
   } catch (error: any) {
     if (error instanceof ApiAuthError) {
       return NextResponse.json({ error: error.message }, { status: error.status });
     }
+    const isValidationError =
+      error.message?.includes('Kamar ini sedang tidak tersedia') ||
+      error.message?.includes('Kamar tidak ditemukan');
+
+    if (isValidationError) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
     console.error('Create kontrak error:', error);
     return NextResponse.json({ error: error.message || 'Gagal membuat kontrak sewa' }, { status: 500 });
   }

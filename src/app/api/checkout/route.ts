@@ -3,10 +3,12 @@ import { prisma } from '@/lib/prisma';
 import { ApiAuthError, requireRoleApi } from '@/lib/rbac';
 import { Role, StatusKamar, StatusKontrak } from '@prisma/client';
 import { sendWhatsAppMessage } from '@/lib/fonnte';
+import { formatRupiah } from '@/lib/utils';
+import { logAktivitas } from '@/lib/log';
 
 export async function POST(req: NextRequest) {
   try {
-    await requireRoleApi([Role.OWNER, Role.ADMIN]);
+    const session = await requireRoleApi([Role.OWNER, Role.ADMIN]);
     const { kontrak_id, potongan_deposit, catatan_potongan } = await req.json();
 
     if (!kontrak_id) {
@@ -39,12 +41,21 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const potonganNum = parseFloat(potongan_deposit || '0');
+    const depositAwalNum = kontrak.deposit_awal ? Number(kontrak.deposit_awal) : 0;
+    const sisaDeposit = Math.max(0, depositAwalNum - potonganNum);
+
     // Step 3-5: Complete contract & reset room to KOSONG
     const result = await prisma.$transaction(async (tx) => {
-      // Set Kontrak to SELESAI
+      // Set Kontrak to SELESAI and store deposit deduction details
       const updatedKontrak = await tx.kontrak.update({
         where: { id: kontrak_id },
-        data: { status: StatusKontrak.SELESAI },
+        data: {
+          status: StatusKontrak.SELESAI,
+          potongan_deposit: potonganNum,
+          catatan_potongan: catatan_potongan || null,
+          tanggal_checkout: new Date(),
+        },
       });
 
       // Set Kamar status to KOSONG
@@ -56,13 +67,27 @@ export async function POST(req: NextRequest) {
       return updatedKontrak;
     });
 
-    // Send WA notification
+    // Send WA notification with deposit details
     const phone = kontrak.penghuni.no_hp;
     const nama = kontrak.penghuni.nama;
     const nomorKamar = kontrak.kamar.nomor_kamar;
 
-    const waMsg = `Halo Sdr/i ${nama},\n\nProses checkout untuk *Kamar ${nomorKamar}* telah selesai dan kontrak sewa Anda telah diakhiri.\n\nTerima kasih telah menyewa di MyKost!`;
+    let depositMsg = '';
+    if (depositAwalNum > 0) {
+      depositMsg = `\n\n*Rincian Deposit:*\n- Deposit Awal: ${formatRupiah(depositAwalNum)}\n- Potongan Deposit: ${formatRupiah(potonganNum)}${catatan_potongan ? ` (${catatan_potongan})` : ''}\n- *Sisa Deposit Dikembalikan: ${formatRupiah(sisaDeposit)}*`;
+    } else if (potonganNum > 0) {
+      depositMsg = `\n\n*Potongan Biaya Checkout:* ${formatRupiah(potonganNum)}${catatan_potongan ? ` (${catatan_potongan})` : ''}`;
+    }
+
+    const waMsg = `Halo Sdr/i ${nama},\n\nProses checkout untuk *Kamar ${nomorKamar}* telah selesai dan kontrak sewa Anda telah diakhiri.${depositMsg}\n\nTerima kasih telah menyewa di MyKost!`;
     await sendWhatsAppMessage({ target: phone, message: waMsg });
+
+    // Audit Log (Priority 6)
+    await logAktivitas(
+      session.id,
+      'proses_checkout',
+      `Memproses checkout Kamar ${nomorKamar} untuk penghuni ${nama}. Potongan deposit: ${formatRupiah(potonganNum)}`
+    );
 
     return NextResponse.json({
       success: true,

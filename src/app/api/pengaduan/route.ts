@@ -4,6 +4,7 @@ import { ApiAuthError, requireAuthApi, requireRoleApi } from '@/lib/rbac';
 import { Role, StatusPengaduan } from '@prisma/client';
 import { uploadFile } from '@/lib/r2';
 import { createNotifikasi, createNotifikasiOwnerAdmin } from '@/lib/notifikasi';
+import { logAktivitas } from '@/lib/log';
 
 export async function GET(req: NextRequest) {
   try {
@@ -104,8 +105,8 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(newPengaduan, { status: 201 });
   } catch (error: any) {
-    if (error instanceof ApiAuthError) {
-      return NextResponse.json({ error: error.message }, { status: error.status });
+    if (error instanceof ApiAuthError || error.status) {
+      return NextResponse.json({ error: error.message }, { status: error.status || 400 });
     }
     console.error('Submit pengaduan error:', error);
     return NextResponse.json({ error: error.message || 'Gagal mengajukan komplain' }, { status: 500 });
@@ -144,6 +145,14 @@ export async function PUT(req: NextRequest) {
         tipe: 'PENGADUAN',
       });
     }
+
+    // Audit Log (Priority 6)
+    const session = await requireRoleApi([Role.OWNER, Role.ADMIN]);
+    await logAktivitas(
+      session.id,
+      'update_pengaduan',
+      `Memperbarui status komplain Kamar ${updated.kamar.nomor_kamar} menjadi ${status}`
+    );
 
     return NextResponse.json(updated);
   } catch (error: any) {

@@ -5,6 +5,7 @@ import { Role, StatusTagihan, StatusVerifikasi } from '@prisma/client';
 import { uploadFile } from '@/lib/r2';
 import { sendWhatsAppMessage } from '@/lib/fonnte';
 import { createNotifikasi, createNotifikasiOwnerAdmin } from '@/lib/notifikasi';
+import { logAktivitas } from '@/lib/log';
 
 export async function GET() {
   try {
@@ -88,8 +89,8 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(pembayaran, { status: 201 });
   } catch (error: any) {
-    if (error instanceof ApiAuthError) {
-      return NextResponse.json({ error: error.message }, { status: error.status });
+    if (error instanceof ApiAuthError || error.status) {
+      return NextResponse.json({ error: error.message }, { status: error.status || 400 });
     }
     console.error('Upload pembayaran error:', error);
     return NextResponse.json({ error: error.message || 'Gagal mengirim bukti pembayaran' }, { status: 500 });
@@ -145,6 +146,13 @@ export async function PUT(req: NextRequest) {
         tipe: 'PEMBAYARAN',
       });
     }
+
+    // Audit Log (Priority 6)
+    await logAktivitas(
+      (await requireRoleApi([Role.OWNER, Role.ADMIN])).id,
+      'verifikasi_pembayaran',
+      `Verifikasi pembayaran (${statusText}) periode ${result.tagihan.periode} untuk Kamar ${result.tagihan.kontrak.kamar.nomor_kamar} (${result.tagihan.kontrak.penghuni.nama})`
+    );
 
     return NextResponse.json(result);
   } catch (error: any) {

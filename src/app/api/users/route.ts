@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { ApiAuthError, requireAuthApi, requireRoleApi } from '@/lib/rbac';
 import { Role } from '@prisma/client';
 import { hashPassword, setSessionCookie } from '@/lib/auth';
+import { logAktivitas } from '@/lib/log';
 
 export async function GET() {
   try {
@@ -28,7 +29,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    await requireRoleApi([Role.OWNER]);
+    const session = await requireRoleApi([Role.OWNER]);
     const { nama, email, password, role } = await req.json();
 
     if (!nama || !email || !password || !role) {
@@ -50,6 +51,12 @@ export async function POST(req: NextRequest) {
       },
       select: { id: true, nama: true, email: true, role: true, created_at: true },
     });
+
+    await logAktivitas(
+      session.id,
+      'tambah_user',
+      `Menambahkan user pengelola baru ${newUser.nama} (${newUser.email}) dengan role ${newUser.role}`
+    );
 
     return NextResponse.json(newUser, { status: 201 });
   } catch (error: any) {

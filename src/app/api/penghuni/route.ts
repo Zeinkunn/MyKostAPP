@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { ApiAuthError, requireRoleApi } from '@/lib/rbac';
 import { Role } from '@prisma/client';
+import { logAktivitas } from '@/lib/log';
 
 export async function GET() {
   try {
@@ -28,7 +29,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    await requireRoleApi([Role.OWNER, Role.ADMIN]);
+    const session = await requireRoleApi([Role.OWNER, Role.ADMIN]);
     const { nama, no_ktp, no_hp, email, foto_ktp_url } = await req.json();
 
     if (!nama || !no_ktp || !no_hp || !email) {
@@ -59,6 +60,12 @@ export async function POST(req: NextRequest) {
         foto_ktp_url,
       },
     });
+
+    await logAktivitas(
+      session.id,
+      'tambah_penghuni',
+      `Menambahkan data penghuni baru ${newPenghuni.nama} (No HP: ${newPenghuni.no_hp})`
+    );
 
     return NextResponse.json(newPenghuni, { status: 201 });
   } catch (error: any) {
