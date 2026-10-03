@@ -4,6 +4,7 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -46,6 +47,11 @@ enum StatusPengaduan {
   SELESAI
 }
 
+enum DendaMode {
+  HARIAN
+  TETAP
+}
+
 model User {
   id            String   @id @default(cuid())
   nama          String
@@ -85,6 +91,8 @@ model Kamar {
 
   kontrak   Kontrak[]
   pengaduan Pengaduan[]
+
+  @@unique([properti_id, nomor_kamar])
 }
 
 model Penghuni {
@@ -120,20 +128,26 @@ model Kontrak {
   dokumen_url           String?
 
   tagihan Tagihan[]
+
+  @@index([status])
 }
 
 model Tagihan {
-  id          String        @id @default(cuid())
-  kontrak_id  String
-  kontrak     Kontrak       @relation(fields: [kontrak_id], references: [id])
-  periode     String        // e.g. "2026-10"
-  jumlah      Decimal       @db.Decimal(12, 2)
-  denda       Decimal       @default(0) @db.Decimal(12, 2)
-  jatuh_tempo DateTime
-  status      StatusTagihan @default(BELUM_BAYAR)
-  created_at  DateTime      @default(now())
+  id                     String        @id @default(cuid())
+  kontrak_id             String
+  kontrak                Kontrak       @relation(fields: [kontrak_id], references: [id])
+  periode                String        // e.g. "2026-10"
+  jumlah                 Decimal       @db.Decimal(12, 2)
+  denda                  Decimal       @default(0) @db.Decimal(12, 2)
+  jatuh_tempo            DateTime
+  status                 StatusTagihan @default(BELUM_BAYAR)
+  terakhir_diingatkan_at DateTime?
+  created_at             DateTime      @default(now())
 
   pembayaran Pembayaran[]
+
+  @@unique([kontrak_id, periode])
+  @@index([status, jatuh_tempo])
 }
 
 model Pembayaran {
@@ -145,6 +159,10 @@ model Pembayaran {
   tanggal_bayar     DateTime         @default(now())
   bukti_url         String
   status_verifikasi StatusVerifikasi @default(PENDING)
+  diverifikasi_oleh String?
+  diverifikasi_at   DateTime?
+
+  @@index([status_verifikasi])
 }
 
 model Pengaduan {
@@ -160,6 +178,8 @@ model Pengaduan {
   catatan_internal String?
   created_at       DateTime        @default(now())
   resolved_at      DateTime?
+
+  @@index([status])
 }
 
 model LogAktivitas {
@@ -169,14 +189,18 @@ model LogAktivitas {
   aksi      String
   detail    String
   timestamp DateTime @default(now())
+
+  @@index([timestamp(sort: Desc)])
 }
 
 model Pengaturan {
-  id             String   @id @default("default")
-  harga_default  Decimal  @default(1500000) @db.Decimal(12, 2)
-  denda_per_hari Decimal  @default(50000) @db.Decimal(12, 2)
-  wa_template    String   @default("Halo Sdr/i {NAMA}, Tagihan sewa kamar {KAMAR} periode {PERIODE} sebesar {JUMLAH} akan jatuh tempo pada {JATUH_TEMPO}.") @db.Text
-  updated_at     DateTime @updatedAt
+  id                  String    @id @default("default")
+  harga_default       Decimal   @default(1500000) @db.Decimal(12, 2)
+  denda_per_hari      Decimal   @default(50000) @db.Decimal(12, 2)
+  denda_mode          DendaMode @default(HARIAN)
+  batas_reminder_hari Int       @default(3)
+  wa_template         String    @default("Halo Sdr/i {NAMA}, Tagihan sewa kamar {KAMAR} periode {PERIODE} sebesar {JUMLAH} akan jatuh tempo pada {JATUH_TEMPO}.") @db.Text
+  updated_at          DateTime  @updatedAt
 }
 
 model Notifikasi {
@@ -208,10 +232,9 @@ model LoginAttempt {
   id         String   @id @default(cuid())
   key        String   @unique // ip:identifier
   attempts   Int      @default(1)
+  expires_at DateTime
   created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
 
   @@index([key])
+  @@index([expires_at])
 }
-
-

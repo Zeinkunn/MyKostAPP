@@ -91,13 +91,12 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      // Rule 6: Reset room to KOSONG only if current status is TERISI
-      if (kontrak.kamar.status === StatusKamar.TERISI) {
-        await tx.kamar.update({
-          where: { id: kontrak.kamar_id },
-          data: { status: StatusKamar.KOSONG },
-        });
-      }
+      // Rule 6: Reset room to KOSONG only if current status is TERISI (atomic)
+      await tx.kamar.updateMany({
+        where: { id: kontrak.kamar_id, status: StatusKamar.TERISI },
+        data: { status: StatusKamar.KOSONG },
+      });
+
 
       return {
         updatedKontrak,

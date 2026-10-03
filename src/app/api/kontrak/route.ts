@@ -123,11 +123,18 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      // 4. Update Kamar status to TERISI
-      await tx.kamar.update({
-        where: { id: kamar_id },
+      // 4. Update Kamar status to TERISI atomically to prevent race condition
+      const kamarUpdate = await tx.kamar.updateMany({
+        where: { id: kamar_id, status: StatusKamar.KOSONG },
         data: { status: StatusKamar.TERISI },
       });
+
+      if (kamarUpdate.count === 0) {
+        const conflictErr = new Error('Kamar baru saja dipesan oleh transaksi lain');
+        (conflictErr as any).status = 409;
+        throw conflictErr;
+      }
+
 
       // 5. Generate First Tagihan automatically
       const year = startDate.getFullYear();
@@ -182,7 +189,14 @@ export async function POST(req: NextRequest) {
     if (error instanceof ApiAuthError) {
       return NextResponse.json({ error: error.message }, { status: error.status });
     }
+    if (error?.status === 409 || error.message?.includes('Kamar baru saja dipesan')) {
+      return NextResponse.json(
+        { error: 'Kamar baru saja dipesan oleh transaksi lain' },
+        { status: 409 }
+      );
+    }
     const isValidationError =
+
       error.message?.includes('Kamar ini sedang tidak tersedia') ||
       error.message?.includes('sedang tidak tersedia') ||
       error.message?.includes('Kamar tidak ditemukan') ||

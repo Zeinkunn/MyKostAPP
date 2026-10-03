@@ -38,43 +38,50 @@ export async function POST(req: NextRequest) {
     const rateLimitKey = `${clientIp}:${normalizedIdentifier}`;
     const now = new Date();
 
+    // Clean up expired rate limit entries
+    await prisma.loginAttempt.deleteMany({
+      where: { expires_at: { lt: now } },
+    }).catch(() => {});
+
     // Check existing rate limit in DB
     const existingAttempt = await prisma.loginAttempt.findUnique({
       where: { key: rateLimitKey },
     });
 
-    if (existingAttempt) {
-      const timeDiff = now.getTime() - existingAttempt.updated_at.getTime();
-      if (timeDiff <= WINDOW_MS && existingAttempt.attempts >= MAX_ATTEMPTS) {
-        const remainingMinutes = Math.ceil((WINDOW_MS - timeDiff) / 60000);
-        return NextResponse.json(
-          {
-            error: `Terlalu banyak percobaan login gagal. Silakan coba lagi dalam ${remainingMinutes} menit.`,
-          },
-          { status: 429 }
-        );
-      }
+    if (existingAttempt && existingAttempt.expires_at > now && existingAttempt.attempts >= MAX_ATTEMPTS) {
+      const remainingMinutes = Math.max(
+        1,
+        Math.ceil((existingAttempt.expires_at.getTime() - now.getTime()) / 60000)
+      );
+      return NextResponse.json(
+        {
+          error: `Terlalu banyak percobaan login gagal. Silakan coba lagi dalam ${remainingMinutes} menit.`,
+        },
+        { status: 429 }
+      );
     }
 
     // Helper to increment failed attempts
     const recordFailedAttempt = async () => {
       try {
-        if (!existingAttempt || now.getTime() - existingAttempt.updated_at.getTime() > WINDOW_MS) {
+        const expiresAt = new Date(now.getTime() + WINDOW_MS);
+        if (!existingAttempt || existingAttempt.expires_at < now) {
           await prisma.loginAttempt.upsert({
             where: { key: rateLimitKey },
-            update: { attempts: 1, updated_at: now },
-            create: { key: rateLimitKey, attempts: 1 },
+            update: { attempts: 1, expires_at: expiresAt },
+            create: { key: rateLimitKey, attempts: 1, expires_at: expiresAt },
           });
         } else {
           await prisma.loginAttempt.update({
             where: { key: rateLimitKey },
-            data: { attempts: { increment: 1 }, updated_at: now },
+            data: { attempts: { increment: 1 }, expires_at: expiresAt },
           });
         }
       } catch (err) {
         console.error('Failed to record login attempt:', err);
       }
     };
+
 
     // Find user by normalized email OR normalized phone via Penghuni relation
     const user = await prisma.user.findFirst({
