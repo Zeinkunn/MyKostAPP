@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Plus, MessageSquare, Clock, CheckCircle2, AlertCircle } from 'lucide-react';
-import { formatDateIndonesian, getStatusBadgeStyle } from '@/lib/utils';
+import { formatDateIndonesian, getStatusBadgeStyle, getFileDisplayUrl } from '@/lib/utils';
 
 interface PengaduanItem {
   id: string;
@@ -106,7 +106,7 @@ export default function PenghuniKomplainPage() {
                   {item.foto_url.map((url, i) => (
                     <img
                       key={i}
-                      src={url}
+                      src={getFileDisplayUrl(url)}
                       alt="Bukti foto"
                       className="w-16 h-16 rounded-xl object-cover border border-slate-200"
                     />

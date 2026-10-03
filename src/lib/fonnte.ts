@@ -6,8 +6,18 @@ export interface WhatsAppMessagePayload {
 
 export async function sendWhatsAppMessage(payload: WhatsAppMessagePayload): Promise<boolean> {
   const token = process.env.FONNTE_API_TOKEN;
-  if (!token || token === 'mock-fonnte-token') {
-    console.log('[MOCK WA SENT] Target:', payload.target, 'Message:', payload.message);
+  const isProduction = process.env.NODE_ENV === 'production';
+
+  if (!token || token === 'mock-fonnte-token' || token === 'your-fonnte-token-here') {
+    if (isProduction) {
+      console.error(
+        '[FONNTE_ERROR] FONNTE_API_TOKEN tidak diset di production! Pesan WhatsApp ke',
+        payload.target,
+        'gagal dikirim.'
+      );
+      return false;
+    }
+    console.log('[DEV_MOCK_WA_SENT] Target:', payload.target, 'Message:\n', payload.message);
     return true;
   }
 
@@ -26,7 +36,6 @@ export async function sendWhatsAppMessage(payload: WhatsAppMessagePayload): Prom
     });
 
     const result = await response.json();
-    console.log('[FONNTE WA RESPONSE]', result);
     return result.status === true;
   } catch (error) {
     console.error('Failed to send WhatsApp message via Fonnte:', error);

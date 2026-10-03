@@ -1,30 +1,50 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { ApiAuthError, requireAuthApi, requireRoleApi } from '@/lib/rbac';
+import { requireAuthApi, requireRoleApi } from '@/lib/rbac';
 import { Role, StatusPengaduan } from '@prisma/client';
 import { uploadFile } from '@/lib/r2';
 import { createNotifikasi, createNotifikasiOwnerAdmin } from '@/lib/notifikasi';
 import { logAktivitas } from '@/lib/log';
+import { handleApiError } from '@/lib/errors';
+import { z } from 'zod';
 
 export async function GET(req: NextRequest) {
   try {
     const session = await requireAuthApi();
     const { searchParams } = new URL(req.url);
-    const status = searchParams.get('status') as StatusPengaduan | null;
+    const rawStatus = searchParams.get('status');
 
+    let status: StatusPengaduan | undefined;
+    if (rawStatus && Object.values(StatusPengaduan).includes(rawStatus as StatusPengaduan)) {
+      status = rawStatus as StatusPengaduan;
+    }
+
+    // Security: For PENGHUNI, omit catatan_internal so internal admin notes are never leaked
     if (session.role === Role.PENGHUNI) {
       const listPengaduan = await prisma.pengaduan.findMany({
         where: {
           penghuni: { user_id: session.id },
           ...(status && { status }),
         },
-        include: { kamar: { select: { nomor_kamar: true } } },
+        select: {
+          id: true,
+          kamar_id: true,
+          penghuni_id: true,
+          kategori: true,
+          deskripsi: true,
+          foto_url: true,
+          status: true,
+          created_at: true,
+          resolved_at: true,
+          kamar: { select: { nomor_kamar: true } },
+          // catatan_internal is intentionally omitted for PENGHUNI
+        },
         orderBy: { created_at: 'desc' },
       });
       return NextResponse.json(listPengaduan);
     }
 
-    // Owner / Admin fetch all
+    // Owner / Admin fetch all with full internal notes and tenant details
     const listPengaduan = await prisma.pengaduan.findMany({
       where: status ? { status } : {},
       include: {
@@ -36,10 +56,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(listPengaduan);
   } catch (error: any) {
-    if (error instanceof ApiAuthError) {
-      return NextResponse.json({ error: error.message }, { status: error.status });
-    }
-    return NextResponse.json({ error: error.message || 'Unauthorized' }, { status: 401 });
+    return handleApiError(error, 'Gagal mengambil data pengaduan');
   }
 }
 
@@ -49,12 +66,20 @@ export async function POST(req: NextRequest) {
     const session = await requireAuthApi();
     const formData = await req.formData();
 
-    const kategori = (formData.get('kategori') as string) || 'Fasilitas Kamar';
-    const deskripsi = formData.get('deskripsi') as string;
+    const kategori = (formData.get('kategori') as string)?.trim() || 'Fasilitas Kamar';
+    const deskripsi = (formData.get('deskripsi') as string)?.trim();
     const files = formData.getAll('foto') as File[];
 
     if (!deskripsi) {
       return NextResponse.json({ error: 'Deskripsi komplain wajib diisi' }, { status: 400 });
+    }
+
+    // Security rule 2.4: Limit maximum files to 3 per complaint
+    if (files.length > 3) {
+      return NextResponse.json(
+        { error: 'Maksimal 3 foto lampiran yang diperbolehkan per pengaduan' },
+        { status: 400 }
+      );
     }
 
     const penghuni = await prisma.penghuni.findUnique({
@@ -69,15 +94,18 @@ export async function POST(req: NextRequest) {
     });
 
     if (!penghuni || !penghuni.kontrak[0]) {
-      return NextResponse.json({ error: 'Data kamar aktif tidak ditemukan' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Data kamar aktif tidak ditemukan untuk akun ini' },
+        { status: 400 }
+      );
     }
 
     const kamar_id = penghuni.kontrak[0].kamar_id;
     const nomorKamar = penghuni.kontrak[0].kamar.nomor_kamar;
 
-    // Upload photos if present
+    // Upload photos (max 3)
     const fotoUrls: string[] = [];
-    for (const file of files) {
+    for (const file of files.slice(0, 3)) {
       if (file && file.size > 0) {
         const fileBuffer = Buffer.from(await file.arrayBuffer());
         const url = await uploadFile(fileBuffer, file.name, file.type);
@@ -105,29 +133,37 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(newPengaduan, { status: 201 });
   } catch (error: any) {
-    if (error instanceof ApiAuthError || error.status) {
-      return NextResponse.json({ error: error.message }, { status: error.status || 400 });
-    }
-    console.error('Submit pengaduan error:', error);
-    return NextResponse.json({ error: error.message || 'Gagal mengajukan komplain' }, { status: 500 });
+    return handleApiError(error, 'Gagal mengajukan komplain');
   }
 }
 
-// Update Status & Internal Notes by Admin (Alur 6.3 Step 4)
+const updatePengaduanSchema = z.object({
+  id: z.string().min(1, 'ID komplain wajib disertakan'),
+  status: z.nativeEnum(StatusPengaduan, {
+    errorMap: () => ({ message: 'Status komplain tidak valid' }),
+  }),
+  catatan_internal: z.string().optional().nullable(),
+});
+
+// Update Status & Internal Notes by Admin
 export async function PUT(req: NextRequest) {
   try {
     const session = await requireRoleApi([Role.OWNER, Role.ADMIN]);
-    const { id, status, catatan_internal } = await req.json();
+    const body = await req.json();
 
-    if (!id || !status) {
-      return NextResponse.json({ error: 'ID dan status komplain wajib disertakan' }, { status: 400 });
+    const parseResult = updatePengaduanSchema.safeParse(body);
+    if (!parseResult.success) {
+      const errorMsg = parseResult.error.errors.map((e) => e.message).join(', ');
+      return NextResponse.json({ error: errorMsg }, { status: 400 });
     }
+
+    const { id, status, catatan_internal } = parseResult.data;
 
     const updated = await prisma.pengaduan.update({
       where: { id },
       data: {
         status,
-        ...(catatan_internal !== undefined && { catatan_internal }),
+        ...(catatan_internal !== undefined && { catatan_internal: catatan_internal || null }),
         ...(status === StatusPengaduan.SELESAI && { resolved_at: new Date() }),
       },
       include: {
@@ -146,7 +182,7 @@ export async function PUT(req: NextRequest) {
       });
     }
 
-    // Audit Log (Priority 6)
+    // Audit Log
     await logAktivitas(
       session.id,
       'update_pengaduan',
@@ -155,9 +191,6 @@ export async function PUT(req: NextRequest) {
 
     return NextResponse.json(updated);
   } catch (error: any) {
-    if (error instanceof ApiAuthError) {
-      return NextResponse.json({ error: error.message }, { status: error.status });
-    }
-    return NextResponse.json({ error: error.message || 'Gagal mengupdate komplain' }, { status: 500 });
+    return handleApiError(error, 'Gagal mengupdate komplain');
   }
 }

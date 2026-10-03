@@ -156,7 +156,14 @@ export async function POST(req: NextRequest) {
     const namaPenghuni = result.kontrak.penghuni.nama;
     const nomorKamar = result.kontrak.kamar.nomor_kamar;
 
-    const waMessage = `Halo Sdr/i ${namaPenghuni},\n\nKontrak sewa Anda untuk *Kamar ${nomorKamar}* telah aktif!\n\nSilakan buka aplikasi MyKost dan lakukan *Daftar Akun* menggunakan nomor WhatsApp ini (${phone}) untuk mengakses tagihan & layanan kamar Anda.\n\nTerima kasih,\nPengelola MyKost`;
+    let activationLinkMsg = '';
+    if (!result.kontrak.penghuni.user_id) {
+      const { createAktivasiToken } = await import('@/lib/token');
+      const aktivasiToken = await createAktivasiToken(result.kontrak.penghuni.id, 'AKTIVASI', 7);
+      activationLinkMsg = `\n\nSilakan klik tautan berikut untuk aktivasi akun & mengatur kata sandi Anda:\n/login?aktivasi=${aktivasiToken}\n*(Tautan berlaku selama 7 hari)*`;
+    }
+
+    const waMessage = `Halo Sdr/i ${namaPenghuni},\n\nKontrak sewa Anda untuk *Kamar ${nomorKamar}* telah aktif!${activationLinkMsg}\n\nTerima kasih,\nPengelola MyKost`;
 
     await sendWhatsAppMessage({
       target: phone,

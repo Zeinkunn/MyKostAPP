@@ -52,6 +52,7 @@ model User {
   email         String   @unique
   password_hash String
   role          Role     @default(PENGHUNI)
+  token_version Int      @default(0)
   created_at    DateTime @default(now())
 
   properti     Properti[]
@@ -97,8 +98,9 @@ model Penghuni {
   foto_ktp_url String?
   created_at   DateTime @default(now())
 
-  kontrak   Kontrak[]
-  pengaduan Pengaduan[]
+  kontrak        Kontrak[]
+  pengaduan      Pengaduan[]
+  aktivasiTokens AktivasiToken[]
 }
 
 model Kontrak {
@@ -187,4 +189,29 @@ model Notifikasi {
   dibaca     Boolean  @default(false)
   created_at DateTime @default(now())
 }
+
+model AktivasiToken {
+  id          String    @id @default(cuid())
+  penghuni_id String
+  penghuni    Penghuni  @relation(fields: [penghuni_id], references: [id], onDelete: Cascade)
+  token_hash  String    @unique
+  tipe        String    @default("AKTIVASI") // AKTIVASI | RESET_PASSWORD
+  expires_at  DateTime
+  used_at     DateTime?
+  created_at  DateTime  @default(now())
+
+  @@index([token_hash])
+  @@index([penghuni_id])
+}
+
+model LoginAttempt {
+  id         String   @id @default(cuid())
+  key        String   @unique // ip:identifier
+  attempts   Int      @default(1)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([key])
+}
+
 

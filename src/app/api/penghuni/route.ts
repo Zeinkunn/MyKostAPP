@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { ApiAuthError, requireRoleApi } from '@/lib/rbac';
+import { requireRoleApi } from '@/lib/rbac';
 import { Role } from '@prisma/client';
 import { logAktivitas } from '@/lib/log';
+import { normalizePhone } from '@/lib/phone';
+import { handleApiError } from '@/lib/errors';
+import { z } from 'zod';
 
 export async function GET() {
   try {
@@ -20,27 +23,31 @@ export async function GET() {
 
     return NextResponse.json(listPenghuni);
   } catch (error: any) {
-    if (error instanceof ApiAuthError) {
-      return NextResponse.json({ error: error.message }, { status: error.status });
-    }
-    return NextResponse.json({ error: error.message || 'Unauthorized' }, { status: 401 });
+    return handleApiError(error, 'Gagal mengambil data penghuni');
   }
 }
+
+const createPenghuniSchema = z.object({
+  nama: z.string().trim().min(1, 'Nama penghuni wajib diisi'),
+  no_ktp: z.string().trim().min(1, 'Nomor KTP wajib diisi'),
+  no_hp: z.string().trim().min(8, 'Nomor HP minimal 8 digit'),
+  email: z.string().trim().email('Format email tidak valid'),
+  foto_ktp_url: z.string().optional().nullable(),
+});
 
 export async function POST(req: NextRequest) {
   try {
     const session = await requireRoleApi([Role.OWNER, Role.ADMIN]);
-    const { nama, no_ktp, no_hp, email, foto_ktp_url } = await req.json();
+    const body = await req.json();
 
-    if (!nama || !no_ktp || !no_hp || !email) {
-      return NextResponse.json({ error: 'Nama, No KTP, No HP, dan Email wajib diisi' }, { status: 400 });
+    const parseResult = createPenghuniSchema.safeParse(body);
+    if (!parseResult.success) {
+      const errorMsg = parseResult.error.errors.map((e) => e.message).join(', ');
+      return NextResponse.json({ error: errorMsg }, { status: 400 });
     }
 
-    // Format No HP to standard 08...
-    let cleanPhone = no_hp.trim().replace(/\D/g, '');
-    if (cleanPhone.startsWith('62')) {
-      cleanPhone = '0' + cleanPhone.substring(2);
-    }
+    const { nama, no_ktp, no_hp, email, foto_ktp_url } = parseResult.data;
+    const cleanPhone = normalizePhone(no_hp);
 
     // Check duplicate phone number
     const existingPenghuni = await prisma.penghuni.findUnique({
@@ -48,7 +55,10 @@ export async function POST(req: NextRequest) {
     });
 
     if (existingPenghuni) {
-      return NextResponse.json({ error: 'Nomor HP ini sudah terdaftar untuk penghuni lain' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Nomor HP ini sudah terdaftar untuk penghuni lain' },
+        { status: 400 }
+      );
     }
 
     const newPenghuni = await prisma.penghuni.create({
@@ -57,7 +67,7 @@ export async function POST(req: NextRequest) {
         no_ktp,
         no_hp: cleanPhone,
         email,
-        foto_ktp_url,
+        foto_ktp_url: foto_ktp_url || null,
       },
     });
 
@@ -69,9 +79,6 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(newPenghuni, { status: 201 });
   } catch (error: any) {
-    if (error instanceof ApiAuthError) {
-      return NextResponse.json({ error: error.message }, { status: error.status });
-    }
-    return NextResponse.json({ error: error.message || 'Terjadi kesalahan' }, { status: 500 });
+    return handleApiError(error, 'Gagal menambahkan penghuni');
   }
 }

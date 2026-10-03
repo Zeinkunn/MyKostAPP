@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { CheckCircle2, XCircle, Eye, RefreshCw, Check, X } from 'lucide-react';
-import { formatRupiah, formatDateIndonesian } from '@/lib/utils';
+import { formatRupiah, formatDateIndonesian, getFileDisplayUrl } from '@/lib/utils';
 
 interface PembayaranItem {
   id: string;
@@ -103,10 +103,10 @@ export default function OwnerVerifikasiPage() {
                 <div className="flex gap-3">
                   {/* Thumbnail Bukti */}
                   <div
-                    onClick={() => setSelectedImage(item.bukti_url)}
+                    onClick={() => setSelectedImage(getFileDisplayUrl(item.bukti_url))}
                     className="w-20 h-24 rounded-xl bg-slate-100 border border-slate-200 overflow-hidden shrink-0 cursor-pointer relative group"
                   >
-                    <img src={item.bukti_url} alt="Bukti" className="w-full h-full object-cover" />
+                    <img src={getFileDisplayUrl(item.bukti_url)} alt="Bukti" className="w-full h-full object-cover" />
                     <div className="absolute inset-0 bg-slate-900/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
                       <Eye className="w-5 h-5 text-white" />
                     </div>

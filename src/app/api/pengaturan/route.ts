@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { ApiAuthError, requireAuthApi, requireRoleApi } from '@/lib/rbac';
+import { requireAuthApi, requireRoleApi } from '@/lib/rbac';
 import { Role } from '@prisma/client';
 import { logAktivitas } from '@/lib/log';
+import { handleApiError } from '@/lib/errors';
+import { z } from 'zod';
 
 export async function GET() {
   try {
@@ -25,29 +27,40 @@ export async function GET() {
 
     return NextResponse.json(settings);
   } catch (error: any) {
-    if (error instanceof ApiAuthError) {
-      return NextResponse.json({ error: error.message }, { status: error.status });
-    }
-    return NextResponse.json({ error: error.message || 'Terjadi kesalahan' }, { status: 500 });
+    return handleApiError(error, 'Gagal mengambil pengaturan sistem');
   }
 }
+
+const updatePengaturanSchema = z.object({
+  harga_default: z.coerce.number().positive().optional(),
+  denda_per_hari: z.coerce.number().min(0).optional(),
+  wa_template: z.string().optional(),
+});
 
 export async function PUT(req: NextRequest) {
   try {
     const session = await requireRoleApi([Role.OWNER, Role.ADMIN]);
-    const { harga_default, denda_per_hari, wa_template } = await req.json();
+    const body = await req.json();
+
+    const parseResult = updatePengaturanSchema.safeParse(body);
+    if (!parseResult.success) {
+      const errorMsg = parseResult.error.errors.map((e) => e.message).join(', ');
+      return NextResponse.json({ error: errorMsg }, { status: 400 });
+    }
+
+    const { harga_default, denda_per_hari, wa_template } = parseResult.data;
 
     const updated = await prisma.pengaturan.upsert({
       where: { id: 'default' },
       update: {
-        ...(harga_default !== undefined && { harga_default: parseFloat(harga_default) }),
-        ...(denda_per_hari !== undefined && { denda_per_hari: parseFloat(denda_per_hari) }),
+        ...(harga_default !== undefined && { harga_default }),
+        ...(denda_per_hari !== undefined && { denda_per_hari }),
         ...(wa_template !== undefined && { wa_template }),
       },
       create: {
         id: 'default',
-        harga_default: parseFloat(harga_default || '1500000'),
-        denda_per_hari: parseFloat(denda_per_hari || '50000'),
+        harga_default: harga_default ?? 1500000,
+        denda_per_hari: denda_per_hari ?? 50000,
         wa_template: wa_template || '',
       },
     });
@@ -60,9 +73,6 @@ export async function PUT(req: NextRequest) {
 
     return NextResponse.json(updated);
   } catch (error: any) {
-    if (error instanceof ApiAuthError) {
-      return NextResponse.json({ error: error.message }, { status: error.status });
-    }
-    return NextResponse.json({ error: error.message || 'Gagal menyimpan pengaturan' }, { status: 500 });
+    return handleApiError(error, 'Gagal menyimpan pengaturan');
   }
 }

@@ -1,14 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { ApiAuthError, requireAuthApi, requireRoleApi } from '@/lib/rbac';
+import { requireAuthApi, requireRoleApi } from '@/lib/rbac';
 import { Role, StatusTagihan } from '@prisma/client';
 import { generateMonthlyBills } from '@/lib/tagihan';
+import { handleApiError } from '@/lib/errors';
 
 export async function GET(req: NextRequest) {
   try {
     const session = await requireAuthApi();
     const { searchParams } = new URL(req.url);
-    const status = searchParams.get('status') as StatusTagihan | null;
+    const rawStatus = searchParams.get('status');
+
+    let status: StatusTagihan | undefined;
+    if (rawStatus && Object.values(StatusTagihan).includes(rawStatus as StatusTagihan)) {
+      status = rawStatus as StatusTagihan;
+    }
 
     if (session.role === Role.PENGHUNI) {
       // Fetch only bills for current Penghuni
@@ -47,10 +53,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(listTagihan);
   } catch (error: any) {
-    if (error instanceof ApiAuthError) {
-      return NextResponse.json({ error: error.message }, { status: error.status });
-    }
-    return NextResponse.json({ error: error.message || 'Unauthorized' }, { status: 401 });
+    return handleApiError(error, 'Gagal mengambil data tagihan');
   }
 }
 
@@ -67,9 +70,6 @@ export async function POST() {
       generatedCount: result.generatedCount,
     });
   } catch (error: any) {
-    if (error instanceof ApiAuthError) {
-      return NextResponse.json({ error: error.message }, { status: error.status });
-    }
-    return NextResponse.json({ error: error.message || 'Gagal generate tagihan' }, { status: 500 });
+    return handleApiError(error, 'Gagal generate tagihan');
   }
 }

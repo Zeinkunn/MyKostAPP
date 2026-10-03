@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { MessageSquareWarning, CheckCircle2, Clock, Wrench, RefreshCw, X } from 'lucide-react';
-import { formatDateIndonesian, getStatusBadgeStyle } from '@/lib/utils';
+import { formatDateIndonesian, getStatusBadgeStyle, getFileDisplayUrl } from '@/lib/utils';
 
 interface PengaduanItem {
   id: string;
@@ -150,7 +150,7 @@ export default function OwnerPengaduanPage() {
                     {item.foto_url.map((url, i) => (
                       <img
                         key={i}
-                        src={url}
+                        src={getFileDisplayUrl(url)}
                         alt="Foto komplain"
                         className="w-16 h-16 rounded-xl object-cover border border-slate-200"
                       />
@@ -206,10 +206,13 @@ export default function OwnerPengaduanPage() {
               </div>
 
               <div>
-                <label className="font-semibold text-slate-700">Catatan Internal / Penanganan</label>
+                <label className="font-semibold text-slate-700 flex items-center justify-between">
+                  <span>Catatan Internal</span>
+                  <span className="text-[10px] text-amber-600 font-normal">Internal (tidak terlihat penghuni)</span>
+                </label>
                 <textarea
                   rows={3}
-                  placeholder="Catatan untuk teknisi atau penjelasan kepada penghuni..."
+                  placeholder="Catatan penanganan internal pengelola/teknisi..."
                   value={catatan}
                   onChange={(e) => setCatatan(e.target.value)}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none"

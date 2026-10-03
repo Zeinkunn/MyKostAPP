@@ -19,11 +19,19 @@ export default function LogoutButton({
     setLoading(true);
     try {
       await fetch('/api/auth/logout', { method: 'POST' });
+      if ('caches' in window) {
+        const cacheKeys = await caches.keys();
+        await Promise.all(cacheKeys.map((key) => caches.delete(key)));
+      }
+      if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({ action: 'CLEAR_CACHE' });
+      }
     } catch (err) {
       console.error('Logout error:', err);
     } finally {
       window.location.href = '/login';
     }
+
   };
 
   if (variant === 'sidebar') {

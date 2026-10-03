@@ -2,11 +2,18 @@ import { SignJWT, jwtVerify } from 'jose';
 import bcrypt from 'bcryptjs';
 import { cookies } from 'next/headers';
 import { Role } from '@prisma/client';
+import { prisma } from './prisma';
 
+const PLACEHOLDER_SECRET = 'GANTI_DENGAN_HASIL_openssl_rand_-hex_32';
 const rawSecret = process.env.JWT_SECRET;
-if (!rawSecret || rawSecret.length < 32) {
+if (
+  !rawSecret ||
+  rawSecret.length < 32 ||
+  rawSecret === PLACEHOLDER_SECRET ||
+  rawSecret === 'super-secret-jwt-key-change-in-production-123456'
+) {
   throw new Error(
-    'JWT_SECRET wajib di-set di environment variable dan minimal 32 karakter. ' +
+    'JWT_SECRET wajib di-set di environment variable, minimal 32 karakter, dan bukan placeholder default. ' +
     'Generate dengan: openssl rand -hex 32'
   );
 }
@@ -21,6 +28,7 @@ export interface UserSessionPayload {
   role: Role;
   penghuni_id?: string;
   kamar_id?: string;
+  token_version?: number;
 }
 
 export async function hashPassword(password: string): Promise<string> {
@@ -69,5 +77,25 @@ export async function getCurrentSession(): Promise<UserSessionPayload | null> {
   const cookieStore = await cookies();
   const token = cookieStore.get(COOKIE_NAME)?.value;
   if (!token) return null;
-  return verifySessionToken(token);
+
+  const session = await verifySessionToken(token);
+  if (!session) return null;
+
+  // Validate token_version against database: if token_version doesn't match, session was revoked
+  if (typeof session.token_version === 'number') {
+    try {
+      const user = await prisma.user.findUnique({
+        where: { id: session.id },
+        select: { token_version: true },
+      });
+
+      if (!user || user.token_version !== session.token_version) {
+        return null; // Session has been revoked by password change/reset
+      }
+    } catch {
+      // In case of transient DB lookup error, verifySessionToken already validated signature
+    }
+  }
+
+  return session;
 }

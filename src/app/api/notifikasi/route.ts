@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { ApiAuthError, requireAuthApi } from '@/lib/rbac';
+import { requireAuthApi } from '@/lib/rbac';
+import { handleApiError } from '@/lib/errors';
 
 export async function GET() {
   try {
@@ -20,10 +21,7 @@ export async function GET() {
       unreadCount,
     });
   } catch (error: any) {
-    if (error instanceof ApiAuthError) {
-      return NextResponse.json({ error: error.message }, { status: error.status });
-    }
-    return NextResponse.json({ error: error.message || 'Gagal mengambil notifikasi' }, { status: 500 });
+    return handleApiError(error, 'Gagal mengambil notifikasi');
   }
 }
 
@@ -47,9 +45,6 @@ export async function PUT(req: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
-    if (error instanceof ApiAuthError) {
-      return NextResponse.json({ error: error.message }, { status: error.status });
-    }
-    return NextResponse.json({ error: error.message || 'Gagal mengupdate notifikasi' }, { status: 500 });
+    return handleApiError(error, 'Gagal mengupdate status notifikasi');
   }
 }

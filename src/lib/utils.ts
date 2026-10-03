@@ -53,3 +53,16 @@ export function getStatusBadgeStyle(status: string) {
       return 'bg-slate-100 text-slate-800 border-slate-300';
   }
 }
+
+export function getFileDisplayUrl(keyOrUrl?: string | null): string {
+  if (!keyOrUrl) return '';
+  if (
+    keyOrUrl.startsWith('http://') ||
+    keyOrUrl.startsWith('https://') ||
+    keyOrUrl.startsWith('/uploads/')
+  ) {
+    return keyOrUrl; // Legacy full URL fallback
+  }
+  return `/api/files?key=${encodeURIComponent(keyOrUrl)}`;
+}
+

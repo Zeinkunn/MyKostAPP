@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { ApiAuthError, requireRoleApi } from '@/lib/rbac';
+import { requireRoleApi } from '@/lib/rbac';
 import { Role } from '@prisma/client';
+import { handleApiError } from '@/lib/errors';
+import { z } from 'zod';
 
 export async function GET() {
   try {
-    const session = await requireRoleApi([Role.OWNER, Role.ADMIN]);
+    await requireRoleApi([Role.OWNER, Role.ADMIN]);
     const propertiList = await prisma.properti.findMany({
       include: {
         _count: {
@@ -16,21 +18,27 @@ export async function GET() {
     });
     return NextResponse.json(propertiList);
   } catch (error: any) {
-    if (error instanceof ApiAuthError) {
-      return NextResponse.json({ error: error.message }, { status: error.status });
-    }
-    return NextResponse.json({ error: error.message || 'Unauthorized' }, { status: 401 });
+    return handleApiError(error, 'Gagal mengambil data properti');
   }
 }
+
+const createPropertiSchema = z.object({
+  nama: z.string().trim().min(1, 'Nama properti wajib diisi'),
+  alamat: z.string().trim().min(1, 'Alamat properti wajib diisi'),
+});
 
 export async function POST(req: NextRequest) {
   try {
     const session = await requireRoleApi([Role.OWNER, Role.ADMIN]);
-    const { nama, alamat } = await req.json();
+    const body = await req.json();
 
-    if (!nama || !alamat) {
-      return NextResponse.json({ error: 'Nama dan alamat properti wajib diisi' }, { status: 400 });
+    const parseResult = createPropertiSchema.safeParse(body);
+    if (!parseResult.success) {
+      const errorMsg = parseResult.error.errors.map((e) => e.message).join(', ');
+      return NextResponse.json({ error: errorMsg }, { status: 400 });
     }
+
+    const { nama, alamat } = parseResult.data;
 
     const newProperti = await prisma.properti.create({
       data: {
@@ -42,9 +50,6 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(newProperti, { status: 201 });
   } catch (error: any) {
-    if (error instanceof ApiAuthError) {
-      return NextResponse.json({ error: error.message }, { status: error.status });
-    }
-    return NextResponse.json({ error: error.message || 'Terjadi kesalahan' }, { status: 500 });
+    return handleApiError(error, 'Gagal membuat properti baru');
   }
 }

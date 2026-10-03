@@ -1,38 +1,52 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { verifyPassword, setSessionCookie } from '@/lib/auth';
+import { normalizePhone } from '@/lib/phone';
+import { handleApiError } from '@/lib/errors';
+import { z } from 'zod';
 
-interface RateLimitEntry {
-  attempts: number;
-  firstAttempt: number;
-}
-
-// In-memory rate limiting map (resets on server restart)
-const loginAttempts = new Map<string, RateLimitEntry>();
 const MAX_ATTEMPTS = 5;
 const WINDOW_MS = 15 * 60 * 1000; // 15 minutes
 
+const loginSchema = z.object({
+  identifier: z.string().trim().min(1, 'Email/No HP wajib diisi'),
+  password: z.string().min(1, 'Password wajib diisi'),
+});
+
 export async function POST(req: NextRequest) {
   try {
-    const { identifier, password } = await req.json();
-
-    if (!identifier || !password) {
-      return NextResponse.json(
-        { error: 'Email/No HP dan Password wajib diisi' },
-        { status: 400 }
-      );
+    const body = await req.json();
+    const parseResult = loginSchema.safeParse(body);
+    if (!parseResult.success) {
+      const errorMsg = parseResult.error.errors.map((e) => e.message).join(', ');
+      return NextResponse.json({ error: errorMsg }, { status: 400 });
     }
 
-    const key = identifier.toLowerCase().trim();
-    const now = Date.now();
-    const rateRecord = loginAttempts.get(key);
+    const { identifier, password } = parseResult.data;
 
-    // Rate Limit check
-    if (rateRecord) {
-      if (now - rateRecord.firstAttempt > WINDOW_MS) {
-        loginAttempts.delete(key);
-      } else if (rateRecord.attempts >= MAX_ATTEMPTS) {
-        const remainingMinutes = Math.ceil((WINDOW_MS - (now - rateRecord.firstAttempt)) / 60000);
+    // Normalization: email lowercase or phone normalized
+    const isEmail = identifier.includes('@');
+    const normalizedIdentifier = isEmail
+      ? identifier.toLowerCase().trim()
+      : normalizePhone(identifier);
+
+    // Extract client IP address
+    const forwardedFor = req.headers.get('x-forwarded-for');
+    const clientIp = forwardedFor ? forwardedFor.split(',')[0].trim() : req.headers.get('x-real-ip') || '127.0.0.1';
+
+    // Shared Database Rate Limiting Key: IP + Identifier
+    const rateLimitKey = `${clientIp}:${normalizedIdentifier}`;
+    const now = new Date();
+
+    // Check existing rate limit in DB
+    const existingAttempt = await prisma.loginAttempt.findUnique({
+      where: { key: rateLimitKey },
+    });
+
+    if (existingAttempt) {
+      const timeDiff = now.getTime() - existingAttempt.updated_at.getTime();
+      if (timeDiff <= WINDOW_MS && existingAttempt.attempts >= MAX_ATTEMPTS) {
+        const remainingMinutes = Math.ceil((WINDOW_MS - timeDiff) / 60000);
         return NextResponse.json(
           {
             error: `Terlalu banyak percobaan login gagal. Silakan coba lagi dalam ${remainingMinutes} menit.`,
@@ -42,22 +56,32 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Helper to record failed attempt
-    const recordFailedAttempt = () => {
-      const current = loginAttempts.get(key);
-      if (!current || now - current.firstAttempt > WINDOW_MS) {
-        loginAttempts.set(key, { attempts: 1, firstAttempt: now });
-      } else {
-        current.attempts += 1;
+    // Helper to increment failed attempts
+    const recordFailedAttempt = async () => {
+      try {
+        if (!existingAttempt || now.getTime() - existingAttempt.updated_at.getTime() > WINDOW_MS) {
+          await prisma.loginAttempt.upsert({
+            where: { key: rateLimitKey },
+            update: { attempts: 1, updated_at: now },
+            create: { key: rateLimitKey, attempts: 1 },
+          });
+        } else {
+          await prisma.loginAttempt.update({
+            where: { key: rateLimitKey },
+            data: { attempts: { increment: 1 }, updated_at: now },
+          });
+        }
+      } catch (err) {
+        console.error('Failed to record login attempt:', err);
       }
     };
 
-    // Search by email or no_hp via Penghuni relation
+    // Find user by normalized email OR normalized phone via Penghuni relation
     const user = await prisma.user.findFirst({
       where: {
         OR: [
-          { email: identifier },
-          { penghuni: { no_hp: identifier } },
+          { email: normalizedIdentifier },
+          { penghuni: { no_hp: normalizedIdentifier } },
         ],
       },
       include: {
@@ -74,7 +98,7 @@ export async function POST(req: NextRequest) {
     });
 
     if (!user) {
-      recordFailedAttempt();
+      await recordFailedAttempt();
       return NextResponse.json(
         { error: 'Email/No HP atau password salah' },
         { status: 401 }
@@ -83,18 +107,25 @@ export async function POST(req: NextRequest) {
 
     const isValidPassword = await verifyPassword(password, user.password_hash);
     if (!isValidPassword) {
-      recordFailedAttempt();
+      await recordFailedAttempt();
       return NextResponse.json(
         { error: 'Email/No HP atau password salah' },
         { status: 401 }
       );
     }
 
-    // Successful login -> Reset rate limit counter
-    loginAttempts.delete(key);
+    // Login successful -> Clean rate limit entry
+    try {
+      await prisma.loginAttempt.deleteMany({
+        where: { key: rateLimitKey },
+      });
+    } catch {
+      // Ignore if already deleted
+    }
 
     const activeKontrak = user.penghuni?.kontrak[0];
 
+    // Set session cookie including token_version for revocation support
     await setSessionCookie({
       id: user.id,
       nama: user.nama,
@@ -102,6 +133,7 @@ export async function POST(req: NextRequest) {
       role: user.role,
       penghuni_id: user.penghuni?.id,
       kamar_id: activeKontrak?.kamar_id,
+      token_version: user.token_version,
     });
 
     const redirectUrl = user.role === 'PENGHUNI' ? '/penghuni/beranda' : '/owner/dashboard';
@@ -112,10 +144,6 @@ export async function POST(req: NextRequest) {
       redirectUrl,
     });
   } catch (error) {
-    console.error('Login error:', error);
-    return NextResponse.json(
-      { error: 'Terjadi kesalahan pada server' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'Terjadi kesalahan saat proses login');
   }
 }
