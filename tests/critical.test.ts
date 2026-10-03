@@ -3,6 +3,7 @@ import { normalizePhone } from '@/lib/phone';
 import { hitungDenda } from '@/lib/denda';
 import { hashToken } from '@/lib/token';
 import { detectImageFromBytes } from '@/lib/r2';
+import { canAccessFile } from '@/lib/file-auth';
 
 describe('1. Normalisasi Nomor Handphone (normalizePhone)', () => {
   it('harus mempertahankan format standar 08xxxxxxxxxx', () => {
@@ -102,5 +103,56 @@ describe('4. Deteksi Magic Bytes Gambar (detectImageFromBytes)', () => {
 
     const exeBuffer = Buffer.from('MZ\x90\x00\x03\x00\x00\x00');
     expect(detectImageFromBytes(exeBuffer)).toBeNull();
+  });
+});
+
+describe('5. Otorisasi Akses Berkas (canAccessFile)', () => {
+  const tenantId = 'tenant-123';
+  const otherTenantId = 'tenant-456';
+  const ownAvatarKey = 'avatar-tenant-123.jpg';
+  const otherAvatarKey = 'avatar-tenant-456.jpg';
+  const ownPaymentKey = 'payment-123.jpg';
+  const otherPaymentKey = 'payment-456.jpg';
+  const roomPhotoKey = 'kamar-101.jpg';
+
+  it('OWNER dan ADMIN harus dapat mengakses semua berkas (termasuk avatar siapapun)', () => {
+    expect(canAccessFile('OWNER', 'owner-1', otherAvatarKey, {})).toBe(true);
+    expect(canAccessFile('ADMIN', 'admin-1', otherAvatarKey, {})).toBe(true);
+    expect(canAccessFile('OWNER', 'owner-1', otherPaymentKey, {})).toBe(true);
+  });
+
+  it('PENGHUNI harus diizinkan mengakses foto avatar miliknya sendiri', () => {
+    const isAllowed = canAccessFile('PENGHUNI', tenantId, ownAvatarKey, {
+      userFotoUrl: ownAvatarKey,
+    });
+    expect(isAllowed).toBe(true);
+  });
+
+  it('PENGHUNI harus DITOLAK (403) saat mencoba mengakses foto avatar penghuni lain', () => {
+    const isAllowed = canAccessFile('PENGHUNI', tenantId, otherAvatarKey, {
+      userFotoUrl: ownAvatarKey, // avatar milik tenant ini berbeda dari key yang diminta
+    });
+    expect(isAllowed).toBe(false);
+  });
+
+  it('PENGHUNI harus diizinkan mengakses bukti bayar miliknya sendiri', () => {
+    const isAllowed = canAccessFile('PENGHUNI', tenantId, ownPaymentKey, {
+      paymentUserIds: [tenantId],
+    });
+    expect(isAllowed).toBe(true);
+  });
+
+  it('PENGHUNI harus DITOLAK saat mengakses bukti bayar penghuni lain', () => {
+    const isAllowed = canAccessFile('PENGHUNI', tenantId, otherPaymentKey, {
+      paymentUserIds: [otherTenantId],
+    });
+    expect(isAllowed).toBe(false);
+  });
+
+  it('PENGHUNI harus diizinkan melihat foto kamar umum', () => {
+    const isAllowed = canAccessFile('PENGHUNI', tenantId, roomPhotoKey, {
+      isRoomPhoto: true,
+    });
+    expect(isAllowed).toBe(true);
   });
 });

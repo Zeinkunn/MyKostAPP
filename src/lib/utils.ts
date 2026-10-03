@@ -56,14 +56,17 @@ export function getStatusBadgeStyle(status: string) {
 
 export function getFileDisplayUrl(keyOrUrl?: string | null): string {
   if (!keyOrUrl) return '';
+  const trimmed = keyOrUrl.trim();
+  if (!trimmed) return '';
   if (
-    keyOrUrl.startsWith('http://') ||
-    keyOrUrl.startsWith('https://') ||
-    keyOrUrl.startsWith('/uploads/')
+    trimmed.startsWith('http://') ||
+    trimmed.startsWith('https://') ||
+    trimmed.startsWith('/uploads/') ||
+    trimmed.startsWith('/api/files')
   ) {
-    return keyOrUrl; // Legacy full URL fallback
+    return trimmed; // Legacy full URL fallback or already formatted
   }
-  return `/api/files?key=${encodeURIComponent(keyOrUrl)}`;
+  return `/api/files?key=${encodeURIComponent(trimmed)}`;
 }
 
 export function formatPhoneDisplay(phone?: string | null): string {

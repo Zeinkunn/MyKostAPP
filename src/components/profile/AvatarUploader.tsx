@@ -20,6 +20,7 @@ export default function AvatarUploader({
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [fotoUrl, setFotoUrl] = useState<string | null>(initialFotoUrl || null);
+  const [cacheBust, setCacheBust] = useState<number>(() => Date.now());
   const [uploading, setUploading] = useState(false);
   const [errorToast, setErrorToast] = useState<string | null>(null);
 
@@ -63,6 +64,7 @@ export default function AvatarUploader({
       }
 
       setFotoUrl(data.foto_url);
+      setCacheBust(Date.now());
       router.refresh();
     } catch (err: any) {
       setErrorToast(err.message || 'Gagal memproses foto');
@@ -75,7 +77,10 @@ export default function AvatarUploader({
     }
   };
 
-  const displaySrc = getFileDisplayUrl(fotoUrl);
+  const rawDisplaySrc = getFileDisplayUrl(fotoUrl);
+  const displaySrc = rawDisplaySrc
+    ? `${rawDisplaySrc}${rawDisplaySrc.includes('?') ? '&' : '?'}t=${cacheBust}`
+    : '';
 
   if (variant === 'owner') {
     return (

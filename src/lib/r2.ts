@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import crypto from 'crypto';
 import path from 'path';
@@ -142,3 +142,31 @@ export async function getFileSignedUrl(key: string, expiresIn = 900): Promise<st
   // Local fallback
   return `/uploads/${key}`;
 }
+
+export async function deleteFile(key?: string | null): Promise<void> {
+  if (!key) return;
+  const sanitizedKey = path.basename(key);
+  if (!sanitizedKey) return;
+
+  if (s3Client) {
+    try {
+      await s3Client.send(
+        new DeleteObjectCommand({
+          Bucket: R2_BUCKET_NAME,
+          Key: sanitizedKey,
+        })
+      );
+    } catch (err) {
+      console.warn('Gagal menghapus file dari Cloudflare R2:', err);
+    }
+  }
+
+  // Also clean up local file if present
+  try {
+    const localPath = path.join(process.cwd(), 'public', 'uploads', sanitizedKey);
+    await fs.unlink(localPath);
+  } catch {
+    // Ignore if file doesn't exist
+  }
+}
+
