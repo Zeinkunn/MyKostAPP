@@ -66,3 +66,50 @@ export function getFileDisplayUrl(keyOrUrl?: string | null): string {
   return `/api/files?key=${encodeURIComponent(keyOrUrl)}`;
 }
 
+export function formatPhoneDisplay(phone?: string | null): string {
+  if (!phone) return '-';
+  const clean = phone.trim();
+  const digits = clean.replace(/\D/g, '');
+  if (!digits) return clean;
+
+  let local = digits;
+  if (local.startsWith('62')) {
+    local = local.slice(2);
+  } else if (local.startsWith('0')) {
+    local = local.slice(1);
+  }
+
+  if (local.length >= 9 && local.length <= 13) {
+    const p1 = local.slice(0, 3);
+    const p2 = local.slice(3, 7);
+    const p3 = local.slice(7);
+    return `+62 ${p1}-${p2}-${p3}`;
+  }
+
+  return clean.startsWith('+') ? clean : `+62 ${local}`;
+}
+
+export function maskKTP(ktp?: string | null): string {
+  if (!ktp) return '-';
+  const clean = ktp.trim();
+  if (clean.length < 8) return clean;
+  const first4 = clean.slice(0, 4);
+  const last4 = clean.slice(-4);
+  return `${first4}********${last4}`;
+}
+
+export function formatDateShortIndonesian(dateInput: Date | string): string {
+  if (!dateInput) return '-';
+  const date = new Date(dateInput);
+  return new Intl.DateTimeFormat('id-ID', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  }).format(date);
+}
+
+export function formatDateRange(startInput: Date | string, endInput: Date | string): string {
+  if (!startInput || !endInput) return '-';
+  return `${formatDateShortIndonesian(startInput)} – ${formatDateShortIndonesian(endInput)}`;
+}
+
