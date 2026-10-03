@@ -41,6 +41,12 @@ enum StatusVerifikasi {
   DITOLAK
 }
 
+enum StatusPengajuanPerpanjangan {
+  PENDING
+  DISETUJUI
+  DITOLAK
+}
+
 enum StatusPengaduan {
   BARU
   DIPROSES
@@ -111,9 +117,10 @@ model Penghuni {
   kontak_darurat_hp   String?
   created_at          DateTime @default(now())
 
-  kontrak        Kontrak[]
-  pengaduan      Pengaduan[]
-  aktivasiTokens AktivasiToken[]
+  kontrak                Kontrak[]
+  pengaduan              Pengaduan[]
+  aktivasiTokens         AktivasiToken[]
+  pengajuan_perpanjangan PengajuanPerpanjangan[]
 }
 
 model Kontrak {
@@ -132,9 +139,24 @@ model Kontrak {
   status                StatusKontrak @default(AKTIF)
   dokumen_url           String?
 
-  tagihan Tagihan[]
+  tagihan                Tagihan[]
+  pengajuan_perpanjangan PengajuanPerpanjangan[]
 
   @@index([status])
+}
+
+model PengajuanPerpanjangan {
+  id          String                      @id @default(cuid())
+  kontrak_id  String
+  kontrak     Kontrak                     @relation(fields: [kontrak_id], references: [id], onDelete: Cascade)
+  penghuni_id String
+  penghuni    Penghuni                    @relation(fields: [penghuni_id], references: [id], onDelete: Cascade)
+  status      StatusPengajuanPerpanjangan @default(PENDING)
+  catatan     String?
+  created_at  DateTime                    @default(now())
+  updated_at  DateTime                    @updatedAt
+
+  @@index([kontrak_id, status])
 }
 
 model Tagihan {

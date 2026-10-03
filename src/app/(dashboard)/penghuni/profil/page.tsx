@@ -50,6 +50,10 @@ export default async function PenghuniProfilPage() {
               orderBy: { jatuh_tempo: 'asc' },
               take: 1,
             },
+            pengajuan_perpanjangan: {
+              orderBy: { created_at: 'desc' },
+              take: 1,
+            },
           },
           take: 1,
         },
@@ -188,7 +192,9 @@ export default async function PenghuniProfilPage() {
                 ? `Jatuh tempo sewa berikutnya: ${nextDueFormatted}`
                 : 'Semua tagihan sewa lunas'}
             </span>
-            <PerpanjangButton />
+            <PerpanjangButton
+              initialStatus={activeKontrak.pengajuan_perpanjangan?.[0]?.status}
+            />
           </div>
         </section>
       ) : (

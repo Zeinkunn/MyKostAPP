@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { UserPlus, Search, Phone, LogOut, CheckCircle, AlertCircle, X, ShieldCheck, DollarSign } from 'lucide-react';
+import { UserPlus, Search, Phone, LogOut, CheckCircle, AlertCircle, X, ShieldCheck, DollarSign, Clock } from 'lucide-react';
 import { formatRupiah, formatDateIndonesian } from '@/lib/utils';
 
 interface PenghuniItem {
@@ -19,6 +19,11 @@ interface PenghuniItem {
     deposit_awal?: number;
     status: string;
     kamar: { nomor_kamar: string; tipe: string };
+    pengajuan_perpanjangan?: Array<{
+      id: string;
+      status: string;
+      catatan?: string;
+    }>;
   }>;
 }
 
@@ -188,6 +193,34 @@ export default function OwnerPenghuniPage() {
     }
   };
 
+  const handleVerifikasiPerpanjangan = async (
+    pengajuanId: string,
+    status: 'DISETUJUI' | 'DITOLAK'
+  ) => {
+    const actionLabel = status === 'DISETUJUI' ? 'menyetujui' : 'menolak';
+    if (!window.confirm(`Apakah Anda yakin ingin ${actionLabel} pengajuan perpanjangan sewa ini?`)) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/kontrak/perpanjangan/${pengajuanId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Gagal memproses verifikasi');
+      }
+
+      setToastMessage(`Pengajuan perpanjangan sewa berhasil ${status === 'DISETUJUI' ? 'disetujui' : 'ditolak'}.`);
+      setTimeout(() => setToastMessage(null), 5000);
+      fetchData();
+    } catch (err: any) {
+      alert(err.message || 'Terjadi kesalahan');
+    }
+  };
+
   const filteredPenghuni = penghuniList.filter((item) => {
     return (
       item.nama.toLowerCase().includes(search.toLowerCase()) ||
@@ -287,6 +320,46 @@ export default function OwnerPenghuniPage() {
                         </span>
                       )}
                     </p>
+                    {activeKontrak.pengajuan_perpanjangan?.[0] && (
+                      <div className="p-2.5 bg-amber-50 border border-amber-200/80 rounded-xl space-y-2 mt-2">
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="font-bold text-amber-900 flex items-center gap-1">
+                            <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                            Pengajuan Perpanjangan Sewa
+                          </span>
+                          <span className="font-bold text-[10px] bg-amber-200 text-amber-900 px-2 py-0.5 rounded-md">
+                            Menunggu
+                          </span>
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleVerifikasiPerpanjangan(
+                                activeKontrak.pengajuan_perpanjangan![0].id,
+                                'DISETUJUI'
+                              )
+                            }
+                            className="flex-1 py-1.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold rounded-lg transition-all text-[11px] cursor-pointer"
+                          >
+                            Setujui
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleVerifikasiPerpanjangan(
+                                activeKontrak.pengajuan_perpanjangan![0].id,
+                                'DITOLAK'
+                              )
+                            }
+                            className="flex-1 py-1.5 bg-slate-200 hover:bg-slate-300 active:scale-95 text-slate-700 font-bold rounded-lg transition-all text-[11px] cursor-pointer"
+                          >
+                            Tolak
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
                     <div className="pt-1">
                       <button
                         onClick={() =>

@@ -4,6 +4,7 @@ import { hitungDenda } from '@/lib/denda';
 import { hashToken } from '@/lib/token';
 import { detectImageFromBytes } from '@/lib/r2';
 import { canAccessFile } from '@/lib/file-auth';
+import { checkPerpanjanganEligibility } from '@/lib/perpanjangan';
 
 describe('1. Normalisasi Nomor Handphone (normalizePhone)', () => {
   it('harus mempertahankan format standar 08xxxxxxxxxx', () => {
@@ -154,5 +155,61 @@ describe('5. Otorisasi Akses Berkas (canAccessFile)', () => {
       isRoomPhoto: true,
     });
     expect(isAllowed).toBe(true);
+  });
+});
+
+describe('6. Aturan Rate Limit & Duplikat Perpanjangan Sewa (checkPerpanjanganEligibility)', () => {
+  const now = new Date('2026-10-03T12:00:00.000Z');
+
+  it('harus MENGIZINKAN (allowed: true) jika belum pernah ada pengajuan sebelumnya', () => {
+    const res = checkPerpanjanganEligibility([], now);
+    expect(res.allowed).toBe(true);
+  });
+
+  it('harus MENOLAK dengan 409 (PENDING_EXIST) jika sudah ada pengajuan berstatus PENDING', () => {
+    const res = checkPerpanjanganEligibility(
+      [
+        {
+          status: 'PENDING',
+          created_at: new Date('2026-10-01T10:00:00.000Z'),
+        },
+      ],
+      now
+    );
+    expect(res.allowed).toBe(false);
+    expect(res.statusCode).toBe(409);
+    expect(res.reason).toBe('PENDING_EXIST');
+  });
+
+  it('harus MENOLAK dengan 429 (RATE_LIMITED) jika pengajuan terakhir dibuat kurang dari 7 hari lalu (< 7 hari)', () => {
+    // 3 days ago, previously rejected or finished
+    const threeDaysAgo = new Date('2026-09-30T12:00:00.000Z');
+    const res = checkPerpanjanganEligibility(
+      [
+        {
+          status: 'DITOLAK',
+          created_at: threeDaysAgo,
+        },
+      ],
+      now
+    );
+    expect(res.allowed).toBe(false);
+    expect(res.statusCode).toBe(429);
+    expect(res.reason).toBe('RATE_LIMITED');
+  });
+
+  it('harus MENGIZINKAN (allowed: true) jika pengajuan terakhir sudah lewat dari 7 hari (> 7 hari)', () => {
+    // 8 days ago
+    const eightDaysAgo = new Date('2026-09-25T12:00:00.000Z');
+    const res = checkPerpanjanganEligibility(
+      [
+        {
+          status: 'DISETUJUI',
+          created_at: eightDaysAgo,
+        },
+      ],
+      now
+    );
+    expect(res.allowed).toBe(true);
   });
 });

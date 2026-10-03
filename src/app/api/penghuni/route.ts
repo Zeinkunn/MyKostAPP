@@ -13,7 +13,13 @@ export async function GET() {
     const listPenghuni = await prisma.penghuni.findMany({
       include: {
         kontrak: {
-          include: { kamar: { select: { nomor_kamar: true, tipe: true } } },
+          include: {
+            kamar: { select: { nomor_kamar: true, tipe: true } },
+            pengajuan_perpanjangan: {
+              where: { status: 'PENDING' },
+              take: 1,
+            },
+          },
           orderBy: { tanggal_mulai: 'desc' },
         },
         user: { select: { email: true, created_at: true } },
