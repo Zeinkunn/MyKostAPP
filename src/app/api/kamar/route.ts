@@ -31,6 +31,7 @@ export async function GET(req: NextRequest) {
           id: true,
           nomor_kamar: true,
           tipe: true,
+          lantai: true,
           harga_sewa: true,
           fasilitas: true,
           foto_url: true,
@@ -66,6 +67,7 @@ const createKamarSchema = z.object({
   properti_id: z.string().min(1, 'Properti wajib dipilih'),
   nomor_kamar: z.string().trim().min(1, 'Nomor kamar wajib diisi'),
   tipe: z.string().trim().min(1, 'Tipe kamar wajib diisi'),
+  lantai: z.coerce.number().int().optional().nullable(),
   harga_sewa: z.coerce.number().positive('Harga sewa harus lebih dari 0'),
   fasilitas: z.string().optional().default(''),
   status: z.nativeEnum(StatusKamar).optional().default(StatusKamar.KOSONG),
@@ -83,13 +85,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: errorMsg }, { status: 400 });
     }
 
-    const { properti_id, nomor_kamar, tipe, harga_sewa, fasilitas, status, foto_url } = parseResult.data;
+    const { properti_id, nomor_kamar, tipe, lantai, harga_sewa, fasilitas, status, foto_url } = parseResult.data;
 
     const newKamar = await prisma.kamar.create({
       data: {
         properti_id,
         nomor_kamar,
         tipe,
+        lantai: lantai ?? null,
         harga_sewa,
         fasilitas,
         status,
@@ -100,7 +103,7 @@ export async function POST(req: NextRequest) {
     await logAktivitas(
       session.id,
       'buat_kamar',
-      `Membuat unit Kamar ${newKamar.nomor_kamar} (${newKamar.tipe})`
+      `Membuat unit Kamar ${newKamar.nomor_kamar} (${newKamar.tipe}${newKamar.lantai ? ` • Lt. ${newKamar.lantai}` : ''})`
     );
 
     return NextResponse.json(newKamar, { status: 201 });
@@ -113,6 +116,7 @@ const updateKamarSchema = z.object({
   id: z.string().min(1, 'ID Kamar wajib disertakan'),
   nomor_kamar: z.string().trim().min(1).optional(),
   tipe: z.string().trim().min(1).optional(),
+  lantai: z.coerce.number().int().optional().nullable(),
   harga_sewa: z.coerce.number().positive().optional(),
   fasilitas: z.string().optional(),
   status: z.nativeEnum(StatusKamar).optional(),
@@ -130,13 +134,14 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: errorMsg }, { status: 400 });
     }
 
-    const { id, nomor_kamar, tipe, harga_sewa, fasilitas, status, foto_url } = parseResult.data;
+    const { id, nomor_kamar, tipe, lantai, harga_sewa, fasilitas, status, foto_url } = parseResult.data;
 
     const updatedKamar = await prisma.kamar.update({
       where: { id },
       data: {
         ...(nomor_kamar && { nomor_kamar }),
         ...(tipe && { tipe }),
+        ...(lantai !== undefined && { lantai: lantai ?? null }),
         ...(harga_sewa !== undefined && { harga_sewa }),
         ...(fasilitas !== undefined && { fasilitas }),
         ...(status && { status }),

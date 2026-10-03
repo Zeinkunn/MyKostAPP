@@ -2,7 +2,19 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { User, Mail, Phone, CreditCard, Lock, ArrowLeft, Save, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import {
+  User,
+  Mail,
+  Phone,
+  CreditCard,
+  Lock,
+  ArrowLeft,
+  Save,
+  Loader2,
+  CheckCircle2,
+  AlertCircle,
+  ShieldAlert,
+} from 'lucide-react';
 import Link from 'next/link';
 import { maskKTP, formatPhoneDisplay } from '@/lib/utils';
 
@@ -11,6 +23,8 @@ interface TenantDataFormProps {
   initialEmail: string;
   noHp: string;
   noKtp: string;
+  initialKontakDaruratNama?: string | null;
+  initialKontakDaruratHp?: string | null;
 }
 
 export default function TenantDataForm({
@@ -18,10 +32,14 @@ export default function TenantDataForm({
   initialEmail,
   noHp,
   noKtp,
+  initialKontakDaruratNama,
+  initialKontakDaruratHp,
 }: TenantDataFormProps) {
   const router = useRouter();
   const [nama, setNama] = useState(initialNama);
   const [email, setEmail] = useState(initialEmail);
+  const [kontakDaruratNama, setKontakDaruratNama] = useState(initialKontakDaruratNama || '');
+  const [kontakDaruratHp, setKontakDaruratHp] = useState(initialKontakDaruratHp || '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -33,15 +51,28 @@ export default function TenantDataForm({
     setLoading(true);
 
     try {
-      const res = await fetch('/api/users', {
+      // 1. Update basic profile (name, email)
+      const resUser = await fetch('/api/users', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ nama: nama.trim(), email: email.trim() }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Gagal memperbarui data pribadi');
+      const dataUser = await resUser.json();
+      if (!resUser.ok) throw new Error(dataUser.error || 'Gagal memperbarui nama dan email');
 
-      setSuccess('Data pribadi berhasil diperbarui!');
+      // 2. Update emergency contact info
+      const resEmergency = await fetch('/api/penghuni/me', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          kontak_darurat_nama: kontakDaruratNama.trim(),
+          kontak_darurat_hp: kontakDaruratHp.trim(),
+        }),
+      });
+      const dataEmergency = await resEmergency.json();
+      if (!resEmergency.ok) throw new Error(dataEmergency.error || 'Gagal memperbarui kontak darurat');
+
+      setSuccess('Data pribadi dan kontak darurat berhasil diperbarui!');
       setTimeout(() => {
         router.push('/penghuni/profil');
         router.refresh();
@@ -162,10 +193,46 @@ export default function TenantDataForm({
             </p>
           </div>
 
+          {/* Section: Kontak Darurat (Tahap B) */}
+          <div className="pt-3 border-t border-slate-100 space-y-3">
+            <div className="flex items-center gap-1.5">
+              <ShieldAlert className="w-4 h-4 text-blue-600" />
+              <h2 className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                Kontak Darurat (Emergency Contact)
+              </h2>
+            </div>
+            <p className="text-[11px] text-slate-500 font-normal leading-relaxed">
+              Kontak kerabat, keluarga, atau orang terdekat yang dapat dihubungi pengelola saat
+              keadaan darurat.
+            </p>
+
+            <div className="space-y-1">
+              <label className="block text-slate-600">Nama Kontak Darurat</label>
+              <input
+                type="text"
+                value={kontakDaruratNama}
+                onChange={(e) => setKontakDaruratNama(e.target.value)}
+                placeholder="Contoh: Budi Santoso (Ayah / Wali)"
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="block text-slate-600">Nomor Handphone Kontak Darurat</label>
+              <input
+                type="tel"
+                value={kontakDaruratHp}
+                onChange={(e) => setKontakDaruratHp(e.target.value)}
+                placeholder="Contoh: 081234567890"
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white"
+              />
+            </div>
+          </div>
+
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 bg-blue-600 hover:bg-blue-700 active:scale-98 text-white font-bold rounded-xl shadow-xs transition-all flex items-center justify-center gap-2 text-sm disabled:opacity-50 cursor-pointer mt-2"
+            className="w-full py-3 bg-blue-600 hover:bg-blue-700 active:scale-98 text-white font-bold rounded-xl shadow-xs transition-all flex items-center justify-center gap-2 text-sm disabled:opacity-50 cursor-pointer mt-4"
           >
             {loading ? (
               <>

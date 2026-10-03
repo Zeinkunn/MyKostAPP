@@ -39,6 +39,10 @@ const updatePengaturanSchema = z.object({
   denda_mode: z.enum([DendaMode.HARIAN, DendaMode.TETAP]).optional(),
   batas_reminder_hari: z.coerce.number().int().min(1).max(30).optional(),
   wa_template: z.string().optional(),
+  bank_nama: z.string().trim().max(100).optional().nullable(),
+  bank_no_rekening: z.string().trim().max(100).optional().nullable(),
+  bank_atas_nama: z.string().trim().max(150).optional().nullable(),
+  kontak_pengelola_wa: z.string().trim().max(30).optional().nullable(),
 });
 
 export async function PUT(req: NextRequest) {
@@ -52,8 +56,17 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: errorMsg }, { status: 400 });
     }
 
-    const { harga_default, denda_per_hari, denda_mode, batas_reminder_hari, wa_template } =
-      parseResult.data;
+    const {
+      harga_default,
+      denda_per_hari,
+      denda_mode,
+      batas_reminder_hari,
+      wa_template,
+      bank_nama,
+      bank_no_rekening,
+      bank_atas_nama,
+      kontak_pengelola_wa,
+    } = parseResult.data;
 
     const updated = await prisma.pengaturan.upsert({
       where: { id: 'default' },
@@ -63,6 +76,10 @@ export async function PUT(req: NextRequest) {
         ...(denda_mode !== undefined && { denda_mode }),
         ...(batas_reminder_hari !== undefined && { batas_reminder_hari }),
         ...(wa_template !== undefined && { wa_template }),
+        ...(bank_nama !== undefined && { bank_nama: bank_nama || null }),
+        ...(bank_no_rekening !== undefined && { bank_no_rekening: bank_no_rekening || null }),
+        ...(bank_atas_nama !== undefined && { bank_atas_nama: bank_atas_nama || null }),
+        ...(kontak_pengelola_wa !== undefined && { kontak_pengelola_wa: kontak_pengelola_wa || null }),
       },
       create: {
         id: 'default',
@@ -71,13 +88,17 @@ export async function PUT(req: NextRequest) {
         denda_mode: denda_mode ?? DendaMode.HARIAN,
         batas_reminder_hari: batas_reminder_hari ?? 3,
         wa_template: wa_template || '',
+        bank_nama: bank_nama || null,
+        bank_no_rekening: bank_no_rekening || null,
+        bank_atas_nama: bank_atas_nama || null,
+        kontak_pengelola_wa: kontak_pengelola_wa || null,
       },
     });
 
     await logAktivitas(
       session.id,
       'update_pengaturan',
-      `Memperbarui pengaturan sistem (Mode denda: ${updated.denda_mode}, Denda: Rp ${updated.denda_per_hari}, Batas reminder: ${updated.batas_reminder_hari} hari)`
+      `Memperbarui pengaturan sistem & rekening (${updated.bank_nama || 'Tanpa Bank'}, Denda: ${updated.denda_mode})`
     );
 
     return NextResponse.json(updated);

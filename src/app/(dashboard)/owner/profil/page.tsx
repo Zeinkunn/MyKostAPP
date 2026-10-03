@@ -16,9 +16,12 @@ import {
   FileText,
   ChevronRight,
   ShieldCheck,
+  CreditCard,
 } from 'lucide-react';
 import Link from 'next/link';
 import LogoutButton from '@/components/LogoutButton';
+import AvatarUploader from '@/components/profile/AvatarUploader';
+import { formatPhoneDisplay } from '@/lib/utils';
 import pkg from '../../../../../package.json';
 
 export default async function OwnerProfilPage() {
@@ -32,10 +35,18 @@ export default async function OwnerProfilPage() {
     terisiKamar,
     penghuniAktifCount,
     unreadNotifikasiCount,
+    pengaturan,
   ] = await Promise.all([
     prisma.user.findUnique({
       where: { id: sessionUser.id },
-      select: { id: true, nama: true, email: true, role: true },
+      select: {
+        id: true,
+        nama: true,
+        email: true,
+        role: true,
+        foto_url: true,
+        no_hp: true,
+      },
     }),
     prisma.properti.findMany({
       select: { id: true, nama: true, _count: { select: { kamar: true } } },
@@ -44,6 +55,7 @@ export default async function OwnerProfilPage() {
     prisma.kamar.count({ where: { status: 'TERISI' } }),
     prisma.kontrak.count({ where: { status: 'AKTIF' } }),
     prisma.notifikasi.count({ where: { user_id: sessionUser.id, dibaca: false } }),
+    prisma.pengaturan.findUnique({ where: { id: 'default' } }),
   ]);
 
   // Safe occupancy calculation without NaN
@@ -58,21 +70,19 @@ export default async function OwnerProfilPage() {
       : `${propertiList.length} Properti`;
 
   const propertiSubtext = `${propertiList.length} properti • ${totalKamar} kamar`;
-
   const isOwner = sessionUser.role === Role.OWNER;
-  const initialLetter = (user?.nama || sessionUser.nama || 'U').charAt(0).toUpperCase();
 
   return (
     <div className="max-w-md mx-auto px-0 space-y-5">
       {/* 1. Profile Hero Header */}
       <section className="px-5 pt-3 pb-1 flex flex-col items-center text-center">
-        {/* Circular Avatar with blue gradient ring */}
+        {/* Circular Avatar with blue gradient ring & AvatarUploader */}
         <div className="relative group mb-3">
-          <div className="w-[104px] h-[104px] rounded-full p-1 bg-gradient-to-tr from-blue-600 to-indigo-500 shadow-md">
-            <div className="w-full h-full rounded-full bg-slate-100 flex items-center justify-center text-3xl font-bold text-blue-600 select-none">
-              {initialLetter}
-            </div>
-          </div>
+          <AvatarUploader
+            initialFotoUrl={user?.foto_url}
+            nama={user?.nama || sessionUser.nama}
+            variant="owner"
+          />
         </div>
 
         {/* User Identity */}
@@ -94,9 +104,15 @@ export default async function OwnerProfilPage() {
             </span>
           </div>
 
-          {/* Contact Subline */}
-          <p className="mt-1 text-[11.5px] font-normal text-slate-500 flex items-center justify-center gap-1.5">
+          {/* Contact Subline: email • no. HP */}
+          <p className="mt-1 text-[11.5px] font-normal text-slate-500 flex items-center justify-center gap-1.5 flex-wrap">
             <span>{user?.email || sessionUser.email}</span>
+            {user?.no_hp && (
+              <>
+                <span className="w-1 h-1 rounded-full bg-slate-300" />
+                <span>{formatPhoneDisplay(user.no_hp)}</span>
+              </>
+            )}
           </p>
         </div>
       </section>
@@ -164,7 +180,7 @@ export default async function OwnerProfilPage() {
               </div>
               <div className="min-w-0 text-left">
                 <p className="text-sm font-semibold text-slate-900 truncate">Data Pribadi</p>
-                <p className="text-xs text-slate-400 truncate">Nama &amp; email akun</p>
+                <p className="text-xs text-slate-400 truncate">Nama, email &amp; no. HP</p>
               </div>
             </div>
             <ChevronRight className="w-5 h-5 text-slate-400 shrink-0 ml-2" />
@@ -207,6 +223,36 @@ export default async function OwnerProfilPage() {
               <div className="min-w-0 text-left">
                 <p className="text-sm font-semibold text-slate-900 truncate">Properti Saya</p>
                 <p className="text-xs text-slate-400 truncate">{propertiSubtext}</p>
+              </div>
+            </div>
+            <ChevronRight className="w-5 h-5 text-slate-400 shrink-0 ml-2" />
+          </Link>
+
+          {/* Rekening Bank Pencairan (Tahap B) */}
+          <Link
+            href="/owner/pengaturan#rekening"
+            className="flex items-center justify-between p-3.5 hover:bg-slate-50 active:bg-slate-100/60 transition-colors min-h-[44px] group"
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 shrink-0 group-hover:scale-105 transition-transform">
+                <CreditCard className="w-5 h-5" />
+              </div>
+              <div className="min-w-0 text-left">
+                <div className="flex items-center gap-1.5">
+                  <p className="text-sm font-semibold text-slate-900 truncate">
+                    Rekening Bank Pencairan
+                  </p>
+                  {pengaturan?.bank_nama && (
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800 shrink-0">
+                      {pengaturan.bank_nama}
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-slate-400 truncate">
+                  {pengaturan?.bank_no_rekening
+                    ? `${pengaturan.bank_atas_nama || 'Rekening Kost'} • •••• ${pengaturan.bank_no_rekening.slice(-4)}`
+                    : 'Belum diatur'}
+                </p>
               </div>
             </div>
             <ChevronRight className="w-5 h-5 text-slate-400 shrink-0 ml-2" />

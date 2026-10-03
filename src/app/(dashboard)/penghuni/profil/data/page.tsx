@@ -14,7 +14,14 @@ export default async function PenghuniProfilDataPage() {
     }),
     prisma.penghuni.findUnique({
       where: { user_id: sessionUser.id },
-      select: { nama: true, email: true, no_hp: true, no_ktp: true },
+      select: {
+        nama: true,
+        email: true,
+        no_hp: true,
+        no_ktp: true,
+        kontak_darurat_nama: true,
+        kontak_darurat_hp: true,
+      },
     }),
   ]);
 
@@ -28,6 +35,8 @@ export default async function PenghuniProfilDataPage() {
       initialEmail={user.email}
       noHp={penghuni?.no_hp || ''}
       noKtp={penghuni?.no_ktp || ''}
+      initialKontakDaruratNama={penghuni?.kontak_darurat_nama}
+      initialKontakDaruratHp={penghuni?.kontak_darurat_hp}
     />
   );
 }

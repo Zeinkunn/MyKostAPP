@@ -8,6 +8,7 @@ interface KamarItem {
   id: string;
   nomor_kamar: string;
   tipe: string;
+  lantai?: number | null;
   harga_sewa: number;
   status: 'KOSONG' | 'TERISI' | 'BOOKING' | 'MAINTENANCE';
   fasilitas: string;
@@ -36,6 +37,7 @@ export default function OwnerKamarPage() {
     properti_id: '',
     nomor_kamar: '',
     tipe: '',
+    lantai: '',
     harga_sewa: '',
     fasilitas: '',
     status: 'KOSONG',
@@ -93,7 +95,10 @@ export default function OwnerKamarPage() {
       const res = await fetch('/api/kamar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          lantai: formData.lantai ? Number(formData.lantai) : null,
+        }),
       });
       if (res.ok) {
         setIsModalOpen(false);
@@ -101,6 +106,7 @@ export default function OwnerKamarPage() {
           properti_id: propertiList[0]?.id || '',
           nomor_kamar: '',
           tipe: '',
+          lantai: '',
           harga_sewa: '',
           fasilitas: '',
           status: 'KOSONG',
@@ -228,7 +234,10 @@ export default function OwnerKamarPage() {
                       {item.properti?.nama || 'Properti Kost'}
                     </span>
                     <h3 className="text-lg font-bold text-slate-900">Kamar {item.nomor_kamar}</h3>
-                    <p className="text-xs text-slate-500">{item.tipe}</p>
+                    <p className="text-xs text-slate-500">
+                      {item.tipe}
+                      {item.lantai ? ` • Lt. ${item.lantai}` : ''}
+                    </p>
                   </div>
                   <span
                     className={`px-2.5 py-1 text-[11px] font-semibold rounded-full border ${getStatusBadgeStyle(
@@ -300,16 +309,28 @@ export default function OwnerKamarPage() {
                 </select>
               </div>
 
-              <div>
-                <label className="text-xs font-semibold text-slate-700">Nomor Kamar</label>
-                <input
-                  type="text"
-                  placeholder="cth. 101, 204"
-                  value={formData.nomor_kamar}
-                  onChange={(e) => setFormData({ ...formData, nomor_kamar: e.target.value })}
-                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none"
-                  required
-                />
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-xs font-semibold text-slate-700">Nomor Kamar</label>
+                  <input
+                    type="text"
+                    placeholder="cth. 101, 204"
+                    value={formData.nomor_kamar}
+                    onChange={(e) => setFormData({ ...formData, nomor_kamar: e.target.value })}
+                    className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-700">Lantai (Opsional)</label>
+                  <input
+                    type="number"
+                    placeholder="cth. 1, 2"
+                    value={formData.lantai}
+                    onChange={(e) => setFormData({ ...formData, lantai: e.target.value })}
+                    className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none"
+                  />
+                </div>
               </div>
 
               <div>

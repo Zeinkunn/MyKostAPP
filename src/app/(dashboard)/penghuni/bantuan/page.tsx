@@ -1,6 +1,8 @@
 import Link from 'next/link';
-import { ArrowLeft, HelpCircle, LifeBuoy } from 'lucide-react';
+import { ArrowLeft, HelpCircle, LifeBuoy, MessageSquare } from 'lucide-react';
 import FaqAccordion, { FaqItem } from '@/components/FaqAccordion';
+import { prisma } from '@/lib/prisma';
+import { normalizePhone } from '@/lib/phone';
 
 const TENANT_FAQS: FaqItem[] = [
   {
@@ -35,7 +37,20 @@ const TENANT_FAQS: FaqItem[] = [
   },
 ];
 
-export default function PenghuniBantuanPage() {
+export default async function PenghuniBantuanPage() {
+  const settings = await prisma.pengaturan.findUnique({
+    where: { id: 'default' },
+    select: { kontak_pengelola_wa: true },
+  });
+
+  let waUrl: string | null = null;
+  if (settings?.kontak_pengelola_wa) {
+    const normalized = normalizePhone(settings.kontak_pengelola_wa);
+    const intlDigits = normalized.startsWith('0') ? `62${normalized.slice(1)}` : normalized;
+    const textMsg = encodeURIComponent('Halo Pengelola MyKost, saya penghuni ingin menanyakan perihal kost.');
+    waUrl = `https://wa.me/${intlDigits}?text=${textMsg}`;
+  }
+
   return (
     <div className="max-w-md mx-auto space-y-5">
       {/* Header */}
@@ -53,7 +68,7 @@ export default function PenghuniBantuanPage() {
               Pusat Bantuan
             </span>
           </div>
-          <h1 className="text-xl font-bold text-slate-900">Bantuan & FAQ Penghuni</h1>
+          <h1 className="text-xl font-bold text-slate-900">Bantuan &amp; FAQ Penghuni</h1>
         </div>
       </div>
 
@@ -70,6 +85,29 @@ export default function PenghuniBantuanPage() {
           pengajuan perpanjangan, dan pelaporan kendala di bawah ini.
         </p>
       </div>
+
+      {/* WhatsApp Manager Contact Action Card (Rendered only when filled) */}
+      {waUrl && (
+        <div className="bg-emerald-50 border border-emerald-200/80 rounded-2xl p-4 flex items-center justify-between gap-3 shadow-xs">
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5 text-emerald-800 font-bold text-xs">
+              <MessageSquare className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>Hubungi Pengelola Kost</span>
+            </div>
+            <p className="text-[11px] text-emerald-700/90 mt-0.5 truncate">
+              Chat langsung via WhatsApp resmi pengelola
+            </p>
+          </div>
+          <a
+            href={waUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs rounded-xl shadow-xs transition-all shrink-0 flex items-center gap-1.5"
+          >
+            <span>Hubungi WA</span>
+          </a>
+        </div>
+      )}
 
       {/* FAQ Accordion List */}
       <div className="space-y-3">

@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { Camera, Upload, ArrowLeft, CheckCircle, Image as ImageIcon } from 'lucide-react';
+import { Camera, Upload, ArrowLeft, CheckCircle, Image as ImageIcon, CreditCard, Copy, Check } from 'lucide-react';
 import imageCompression from 'browser-image-compression';
 
 export default function UploadBuktiBayarPage() {
@@ -19,6 +19,23 @@ export default function UploadBuktiBayarPage() {
   const [loading, setLoading] = useState(false);
   const [compressing, setCompressing] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [bankInfo, setBankInfo] = useState<{
+    bank_nama?: string;
+    bank_no_rekening?: string;
+    bank_atas_nama?: string;
+  } | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/pengaturan')
+      .then((r) => r.json())
+      .then((data) => {
+        if (data && data.bank_no_rekening) {
+          setBankInfo(data);
+        }
+      })
+      .catch((err) => console.error('Gagal memuat info bank:', err));
+  }, []);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -98,6 +115,62 @@ export default function UploadBuktiBayarPage() {
             Ambil foto dari kamera langsung atau pilih screenshot dari galeri HP Anda.
           </p>
         </div>
+
+        {bankInfo && bankInfo.bank_no_rekening && (
+          <div className="bg-blue-50/70 border border-blue-200/80 rounded-2xl p-4 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <CreditCard className="w-4 h-4 text-blue-600" />
+                <span className="text-xs font-bold text-blue-900 uppercase tracking-wider">
+                  Transfer ke Rekening Pengelola
+                </span>
+              </div>
+              {bankInfo.bank_nama && (
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-600 text-white">
+                  {bankInfo.bank_nama}
+                </span>
+              )}
+            </div>
+
+            <div className="flex items-center justify-between bg-white p-3 rounded-xl border border-blue-100">
+              <div>
+                <span className="text-[11px] text-slate-400 block font-medium">Nomor Rekening</span>
+                <span className="text-sm font-bold text-slate-900 font-mono select-all">
+                  {bankInfo.bank_no_rekening}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  if (bankInfo.bank_no_rekening) {
+                    navigator.clipboard.writeText(bankInfo.bank_no_rekening);
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2500);
+                  }
+                }}
+                className="px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                {copied ? (
+                  <>
+                    <Check className="w-3.5 h-3.5 text-emerald-600" />
+                    <span className="text-emerald-700 font-bold">Tersalin!</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3.5 h-3.5" />
+                    <span>Salin</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            {bankInfo.bank_atas_nama && (
+              <p className="text-[11px] text-slate-500 font-medium px-1">
+                Atas Nama: <strong className="text-slate-800">{bankInfo.bank_atas_nama}</strong>
+              </p>
+            )}
+          </div>
+        )}
 
         {success ? (
           <div className="p-6 text-center space-y-3">

@@ -81,6 +81,7 @@ export async function POST(req: NextRequest) {
 const updateProfileSchema = z.object({
   nama: z.string().trim().min(1, 'Nama wajib diisi'),
   email: z.string().trim().email('Format email tidak valid'),
+  no_hp: z.string().trim().optional().nullable(),
 });
 
 // Update Self Profile
@@ -95,7 +96,7 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: errorMsg }, { status: 400 });
     }
 
-    const { nama, email } = parseResult.data;
+    const { nama, email, no_hp } = parseResult.data;
 
     // Check if email taken by another user
     const existingEmail = await prisma.user.findFirst({
@@ -113,7 +114,11 @@ export async function PUT(req: NextRequest) {
     const updatedUser = await prisma.$transaction(async (tx) => {
       const user = await tx.user.update({
         where: { id: session.id },
-        data: { nama, email },
+        data: {
+          nama,
+          email,
+          ...(no_hp !== undefined && { no_hp: no_hp ? no_hp.trim() : null }),
+        },
       });
 
       if (session.role === Role.PENGHUNI) {

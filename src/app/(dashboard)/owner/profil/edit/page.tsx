@@ -13,6 +13,7 @@ export default async function EditProfilOwnerPage() {
       id: true,
       nama: true,
       email: true,
+      no_hp: true,
     },
   });
 
@@ -24,9 +25,11 @@ export default async function EditProfilOwnerPage() {
     <EditProfileForm
       initialNama={user.nama}
       initialEmail={user.email}
+      initialNoHp={user.no_hp}
       backHref="/owner/profil"
       title="Edit Profil Pengelola"
       successRedirectHref="/owner/profil"
+      showPhoneInput={true}
     />
   );
 }

@@ -59,6 +59,8 @@ model User {
   password_hash String
   role          Role     @default(PENGHUNI)
   token_version Int      @default(0)
+  foto_url      String?
+  no_hp         String?
   created_at    DateTime @default(now())
 
   properti     Properti[]
@@ -84,6 +86,7 @@ model Kamar {
   properti    Properti    @relation(fields: [properti_id], references: [id], onDelete: Cascade)
   nomor_kamar String
   tipe        String
+  lantai      Int?
   harga_sewa  Decimal     @db.Decimal(12, 2)
   status      StatusKamar @default(KOSONG)
   fasilitas   String
@@ -96,15 +99,17 @@ model Kamar {
 }
 
 model Penghuni {
-  id           String   @id @default(cuid())
-  user_id      String?  @unique
-  user         User?    @relation(fields: [user_id], references: [id])
-  nama         String
-  no_ktp       String
-  no_hp        String   @unique
-  email        String
-  foto_ktp_url String?
-  created_at   DateTime @default(now())
+  id                  String   @id @default(cuid())
+  user_id             String?  @unique
+  user                User?    @relation(fields: [user_id], references: [id])
+  nama                String
+  no_ktp              String
+  no_hp               String   @unique
+  email               String
+  foto_ktp_url        String?
+  kontak_darurat_nama String?
+  kontak_darurat_hp   String?
+  created_at          DateTime @default(now())
 
   kontrak        Kontrak[]
   pengaduan      Pengaduan[]
@@ -200,6 +205,10 @@ model Pengaturan {
   denda_mode          DendaMode @default(HARIAN)
   batas_reminder_hari Int       @default(3)
   wa_template         String    @default("Halo Sdr/i {NAMA}, Tagihan sewa kamar {KAMAR} periode {PERIODE} sebesar {JUMLAH} akan jatuh tempo pada {JATUH_TEMPO}.") @db.Text
+  bank_nama           String?
+  bank_no_rekening    String?
+  bank_atas_nama      String?
+  kontak_pengelola_wa String?
   updated_at          DateTime  @updatedAt
 }
 

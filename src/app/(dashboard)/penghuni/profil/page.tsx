@@ -13,6 +13,7 @@ import {
 import Link from 'next/link';
 import LogoutButton from '@/components/LogoutButton';
 import PerpanjangButton from '@/components/profile/PerpanjangButton';
+import AvatarUploader from '@/components/profile/AvatarUploader';
 import {
   formatPhoneDisplay,
   formatDateRange,
@@ -30,6 +31,7 @@ export default async function PenghuniProfilPage() {
         id: true,
         nama: true,
         email: true,
+        foto_url: true,
       },
     }),
     prisma.penghuni.findUnique({
@@ -85,8 +87,6 @@ export default async function PenghuniProfilPage() {
     }
   }
 
-  const initialLetter = (user?.nama || sessionUser.nama || 'P').charAt(0).toUpperCase();
-
   return (
     <div className="max-w-md mx-auto px-0 space-y-5">
       {/* 1. Baris Judul */}
@@ -105,11 +105,13 @@ export default async function PenghuniProfilPage() {
         <div className="absolute -top-12 -right-12 w-32 h-32 rounded-full bg-blue-500/5 pointer-events-none" />
         <div className="absolute -bottom-8 -left-8 w-24 h-24 rounded-full bg-blue-600/5 pointer-events-none" />
 
-        {/* Avatar 96px */}
+        {/* Avatar 96px with AvatarUploader */}
         <div className="relative mb-3">
-          <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center text-3xl font-bold shadow-md select-none">
-            {initialLetter}
-          </div>
+          <AvatarUploader
+            initialFotoUrl={user?.foto_url}
+            nama={user?.nama || sessionUser.nama}
+            variant="penghuni"
+          />
         </div>
 
         {/* Nama Pengguna */}
@@ -122,7 +124,9 @@ export default async function PenghuniProfilPage() {
           {activeKontrak && kamar ? (
             <>
               <span className="text-xs font-semibold text-slate-700 bg-slate-100 px-2.5 py-1 rounded-full">
-                Kamar {kamar.nomor_kamar} • {kamar.tipe}
+                {kamar.lantai
+                  ? `Kamar ${kamar.nomor_kamar} • Lt. ${kamar.lantai}`
+                  : `Kamar ${kamar.nomor_kamar} • ${kamar.tipe}`}
               </span>
               <span className="text-xs font-medium text-blue-700 bg-blue-50 px-2.5 py-1 rounded-full">
                 {propertiNama}

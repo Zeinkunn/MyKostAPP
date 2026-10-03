@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Settings, Save, CheckCircle2, MessageSquare, RefreshCw } from 'lucide-react';
+import { Save, CheckCircle2, MessageSquare, CreditCard, SlidersHorizontal } from 'lucide-react';
 import { formatRupiah } from '@/lib/utils';
 
 export default function OwnerPengaturanPage() {
@@ -10,6 +10,11 @@ export default function OwnerPengaturanPage() {
   const [dendaMode, setDendaMode] = useState<'HARIAN' | 'TETAP'>('HARIAN');
   const [batasReminderHari, setBatasReminderHari] = useState('3');
   const [waTemplate, setWaTemplate] = useState('');
+  const [bankNama, setBankNama] = useState('');
+  const [bankNoRekening, setBankNoRekening] = useState('');
+  const [bankAtasNama, setBankAtasNama] = useState('');
+  const [kontakPengelolaWa, setKontakPengelolaWa] = useState('');
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -29,6 +34,10 @@ export default function OwnerPengaturanPage() {
         setDendaMode(data.denda_mode || 'HARIAN');
         setBatasReminderHari(String(data.batas_reminder_hari ?? 3));
         setWaTemplate(data.wa_template || '');
+        setBankNama(data.bank_nama || '');
+        setBankNoRekening(data.bank_no_rekening || '');
+        setBankAtasNama(data.bank_atas_nama || '');
+        setKontakPengelolaWa(data.kontak_pengelola_wa || '');
       }
     } catch (err) {
       console.error(err);
@@ -50,6 +59,10 @@ export default function OwnerPengaturanPage() {
           denda_mode: dendaMode,
           batas_reminder_hari: Number(batasReminderHari),
           wa_template: waTemplate,
+          bank_nama: bankNama,
+          bank_no_rekening: bankNoRekening,
+          bank_atas_nama: bankAtasNama,
+          kontak_pengelola_wa: kontakPengelolaWa,
         }),
       });
 
@@ -67,9 +80,9 @@ export default function OwnerPengaturanPage() {
   return (
     <div className="max-w-2xl space-y-6">
       <div>
-        <h1 className="text-xl md:text-2xl font-bold text-slate-900">Pengaturan Sistem & Denda Dinamis</h1>
+        <h1 className="text-xl md:text-2xl font-bold text-slate-900">Pengaturan Sistem &amp; Rekening</h1>
         <p className="text-xs md:text-sm text-slate-500">
-          Kelola harga sewa default, mode dan besaran denda keterlambatan, batas pengingat, dan template pesan WA.
+          Kelola harga sewa default, mode denda keterlambatan, rekening pencairan bank, dan kontak WA pengelola.
         </p>
       </div>
 
@@ -157,13 +170,85 @@ export default function OwnerPengaturanPage() {
             </p>
           </div>
 
+          {/* Section: Rekening Pencairan (Tahap B, id="rekening") */}
+          <div id="rekening" className="pt-4 border-t border-slate-100 space-y-3">
+            <div>
+              <h2 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                <CreditCard className="w-4 h-4 text-blue-600" />
+                <span>Rekening Bank Pencairan</span>
+              </h2>
+              <p className="text-[11px] text-slate-400 mt-0.5">
+                Rekening tujuan transfer sewa yang akan ditampilkan kepada penghuni pada invoice dan formulir pembayaran.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label className="font-semibold text-slate-700">Nama Bank</label>
+                <input
+                  type="text"
+                  placeholder="cth. BCA, Mandiri, BRI"
+                  value={bankNama}
+                  onChange={(e) => setBankNama(e.target.value)}
+                  className="w-full px-3.5 py-2.5 mt-1 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="font-semibold text-slate-700">Nomor Rekening</label>
+                <input
+                  type="text"
+                  placeholder="cth. 8830123456"
+                  value={bankNoRekening}
+                  onChange={(e) => setBankNoRekening(e.target.value)}
+                  className="w-full px-3.5 py-2.5 mt-1 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="font-semibold text-slate-700">Atas Nama Rekening</label>
+                <input
+                  type="text"
+                  placeholder="cth. PT Griya Harmoni"
+                  value={bankAtasNama}
+                  onChange={(e) => setBankAtasNama(e.target.value)}
+                  className="w-full px-3.5 py-2.5 mt-1 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Section: Kontak WA Pengelola (Tahap B) */}
+          <div className="pt-4 border-t border-slate-100 space-y-3">
+            <div>
+              <h2 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                <MessageSquare className="w-4 h-4 text-blue-600" />
+                <span>Kontak WA Pengelola</span>
+              </h2>
+              <p className="text-[11px] text-slate-400 mt-0.5">
+                Nomor WhatsApp resmi pengelola yang dapat dihubungi langsung oleh penghuni melalui menu Pusat Bantuan.
+              </p>
+            </div>
+
+            <div>
+              <label className="font-semibold text-slate-700">Nomor Handphone / WhatsApp Pengelola</label>
+              <input
+                type="tel"
+                placeholder="cth. 081234567890"
+                value={kontakPengelolaWa}
+                onChange={(e) => setKontakPengelolaWa(e.target.value)}
+                className="w-full px-3.5 py-2.5 mt-1 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none"
+              />
+            </div>
+          </div>
+
           <button
             type="submit"
             disabled={saving}
-            className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold rounded-xl shadow-sm transition-all flex items-center justify-center gap-2"
+            className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold rounded-xl shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer mt-4"
           >
             <Save className="w-4 h-4" />
-            <span>{saving ? 'Menyimpan...' : 'Simpan Pengaturan ke Database'}</span>
+            <span>{saving ? 'Menyimpan Pengaturan...' : 'Simpan Pengaturan'}</span>
           </button>
         </form>
       )}
