@@ -3,31 +3,35 @@
 import { FileSpreadsheet, Printer } from 'lucide-react';
 import ExcelJS from 'exceljs';
 
-interface ExportExcelButtonProps {
-  approvedPayments: Array<{
-    id: string;
-    tanggal_bayar: string | Date;
-    metode: string;
-    jumlah_dibayar: number | string;
-    tagihan: {
-      periode: string;
-      kontrak: {
-        kamar: { nomor_kamar: string };
-        penghuni: { nama: string };
-      };
-    };
-  }>;
-  unpaidBills: Array<{
-    id: string;
+export interface SerializedPaymentItem {
+  id: string;
+  tanggal_bayar: string;
+  metode: string;
+  jumlah_dibayar: number;
+  tagihan: {
     periode: string;
-    jumlah: number | string;
-    denda: number | string;
-    jatuh_tempo: string | Date;
     kontrak: {
       kamar: { nomor_kamar: string };
       penghuni: { nama: string };
     };
-  }>;
+  };
+}
+
+export interface SerializedUnpaidBillItem {
+  id: string;
+  periode: string;
+  jumlah: number;
+  denda: number;
+  jatuh_tempo: string;
+  kontrak: {
+    kamar: { nomor_kamar: string };
+    penghuni: { nama: string };
+  };
+}
+
+interface ExportExcelButtonProps {
+  approvedPayments: SerializedPaymentItem[];
+  unpaidBills: SerializedUnpaidBillItem[];
 }
 
 export default function ExportExcelButton({ approvedPayments, unpaidBills }: ExportExcelButtonProps) {

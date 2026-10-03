@@ -2,40 +2,22 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { ApiAuthError, requireRoleApi } from '@/lib/rbac';
 import { Role, StatusKamar, StatusKontrak, StatusTagihan } from '@prisma/client';
+import { normalizePhone } from '@/lib/phone';
 import { sendWhatsAppMessage } from '@/lib/fonnte';
 import { logAktivitas } from '@/lib/log';
-
-export async function GET() {
-  try {
-    await requireRoleApi([Role.OWNER, Role.ADMIN]);
-    const listKontrak = await prisma.kontrak.findMany({
-      include: {
-        kamar: { select: { nomor_kamar: true, tipe: true, harga_sewa: true } },
-        penghuni: { select: { nama: true, no_hp: true, email: true } },
-        tagihan: { orderBy: { created_at: 'desc' }, take: 1 },
-      },
-      orderBy: { tanggal_mulai: 'desc' },
-    });
-
-    return NextResponse.json(listKontrak);
-  } catch (error: any) {
-    if (error instanceof ApiAuthError) {
-      return NextResponse.json({ error: error.message }, { status: error.status });
-    }
-    return NextResponse.json({ error: error.message || 'Unauthorized' }, { status: 401 });
-  }
-}
-
 import { z } from 'zod';
 
-const createKontrakSchema = z
+const onboardingSchema = z
   .object({
-    kamar_id: z.string().min(1, 'ID Kamar wajib diisi'),
-    penghuni_id: z.string().min(1, 'ID Penghuni wajib diisi'),
+    nama: z.string().trim().min(1, 'Nama wajib diisi'),
+    no_ktp: z.string().trim().min(1, 'Nomor KTP wajib diisi'),
+    no_hp: z.string().trim().min(8, 'Nomor HP minimal 8 digit'),
+    email: z.string().trim().email('Format email tidak valid'),
+    kamar_id: z.string().min(1, 'Kamar wajib dipilih'),
     tanggal_mulai: z.string().refine((val) => !isNaN(Date.parse(val)), 'Tanggal mulai tidak valid'),
     tanggal_selesai: z.string().refine((val) => !isNaN(Date.parse(val)), 'Tanggal selesai tidak valid'),
     harga_sewa_disepakati: z.coerce.number().positive('Harga sewa harus lebih dari 0'),
-    deposit_awal: z.coerce.number().min(0, 'Deposit tidak boleh bernilai negatif').optional().nullable(),
+    deposit_awal: z.coerce.number().min(0, 'Deposit tidak boleh negatif').optional().nullable(),
     dokumen_url: z.string().optional().nullable(),
   })
   .refine(
@@ -48,15 +30,18 @@ export async function POST(req: NextRequest) {
     const session = await requireRoleApi([Role.OWNER, Role.ADMIN]);
     const body = await req.json();
 
-    const parseResult = createKontrakSchema.safeParse(body);
+    const parseResult = onboardingSchema.safeParse(body);
     if (!parseResult.success) {
       const errorMsg = parseResult.error.errors.map((e) => e.message).join(', ');
       return NextResponse.json({ error: errorMsg }, { status: 400 });
     }
 
     const {
+      nama,
+      no_ktp,
+      no_hp,
+      email,
       kamar_id,
-      penghuni_id,
       tanggal_mulai,
       tanggal_selesai,
       harga_sewa_disepakati,
@@ -64,33 +49,12 @@ export async function POST(req: NextRequest) {
       dokumen_url,
     } = parseResult.data;
 
+    const cleanPhone = normalizePhone(no_hp);
     const startDate = new Date(tanggal_mulai);
     const endDate = new Date(tanggal_selesai);
 
-    // Business Rule Steps:
-    // Transaction to verify room & tenant, create Kontrak, update Kamar to TERISI, & generate first Tagihan
     const result = await prisma.$transaction(async (tx) => {
-      // 1. Check if Penghuni exists and has no other active contracts
-      const targetPenghuni = await tx.penghuni.findUnique({
-        where: { id: penghuni_id },
-        include: {
-          kontrak: {
-            where: { status: StatusKontrak.AKTIF },
-          },
-        },
-      });
-
-      if (!targetPenghuni) {
-        throw new Error('Data penghuni tidak ditemukan');
-      }
-
-      if (targetPenghuni.kontrak.length > 0) {
-        throw new Error(
-          `Penghuni ${targetPenghuni.nama} masih memiliki kontrak sewa AKTIF. Selesaikan kontrak lama terlebih dahulu.`
-        );
-      }
-
-      // 2. Check if room is KOSONG before booking
+      // 1. Verify Kamar exists and is KOSONG
       const targetKamar = await tx.kamar.findUnique({
         where: { id: kamar_id },
       });
@@ -105,11 +69,52 @@ export async function POST(req: NextRequest) {
         );
       }
 
+      // 2. Find or reuse existing Penghuni by normalized phone
+      let penghuni = await tx.penghuni.findUnique({
+        where: { no_hp: cleanPhone },
+        include: {
+          kontrak: {
+            where: { status: StatusKontrak.AKTIF },
+          },
+        },
+      });
+
+      if (penghuni) {
+        // Prevent tenant with active contract from onboarding into another room concurrently
+        if (penghuni.kontrak.length > 0) {
+          throw new Error(
+            `Penghuni ${penghuni.nama} (${penghuni.no_hp}) masih memiliki kontrak sewa AKTIF. Harap checkout kontrak lama terlebih dahulu.`
+          );
+        }
+
+        // Reuse existing penghuni and update personal details
+        penghuni = await tx.penghuni.update({
+          where: { id: penghuni.id },
+          data: {
+            nama,
+            no_ktp,
+            email,
+          },
+          include: { kontrak: { where: { status: StatusKontrak.AKTIF } } },
+        });
+      } else {
+        // Create brand new penghuni
+        penghuni = await tx.penghuni.create({
+          data: {
+            nama,
+            no_ktp,
+            no_hp: cleanPhone,
+            email,
+          },
+          include: { kontrak: { where: { status: StatusKontrak.AKTIF } } },
+        });
+      }
+
       // 3. Create Kontrak
       const kontrak = await tx.kontrak.create({
         data: {
           kamar_id,
-          penghuni_id,
+          penghuni_id: penghuni.id,
           tanggal_mulai: startDate,
           tanggal_selesai: endDate,
           harga_sewa_disepakati,
@@ -129,13 +134,13 @@ export async function POST(req: NextRequest) {
         data: { status: StatusKamar.TERISI },
       });
 
-      // 5. Generate First Tagihan automatically
+      // 5. Generate first invoice (Tagihan pertama)
       const year = startDate.getFullYear();
       const month = String(startDate.getMonth() + 1).padStart(2, '0');
       const periode = `${year}-${month}`;
 
       const dueDate = new Date(startDate);
-      dueDate.setDate(dueDate.getDate() + 7); // 7 days from start
+      dueDate.setDate(dueDate.getDate() + 7); // Due 7 days from start
 
       const tagihan = await tx.tagihan.create({
         data: {
@@ -148,13 +153,13 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      return { kontrak, tagihan };
+      return { penghuni, kontrak, tagihan, kamar: targetKamar };
     });
 
-    // Send WhatsApp activation message to Penghuni
-    const phone = result.kontrak.penghuni.no_hp;
-    const namaPenghuni = result.kontrak.penghuni.nama;
-    const nomorKamar = result.kontrak.kamar.nomor_kamar;
+    // 6. WhatsApp activation message (sent strictly after transaction commits successfully)
+    const phone = result.penghuni.no_hp;
+    const namaPenghuni = result.penghuni.nama;
+    const nomorKamar = result.kamar.nomor_kamar;
 
     const waMessage = `Halo Sdr/i ${namaPenghuni},\n\nKontrak sewa Anda untuk *Kamar ${nomorKamar}* telah aktif!\n\nSilakan buka aplikasi MyKost dan lakukan *Daftar Akun* menggunakan nomor WhatsApp ini (${phone}) untuk mengakses tagihan & layanan kamar Anda.\n\nTerima kasih,\nPengelola MyKost`;
 
@@ -163,30 +168,39 @@ export async function POST(req: NextRequest) {
       message: waMessage,
     });
 
-    // Audit Log
+    // 7. Audit Log
     await logAktivitas(
       session.id,
-      'buat_kontrak',
-      `Membuat kontrak sewa baru untuk ${namaPenghuni} di Kamar ${nomorKamar}`
+      'onboarding_penghuni',
+      `Onboarding sewa baru: ${namaPenghuni} di Kamar ${nomorKamar} (Kontrak ID: ${result.kontrak.id})`
     );
 
-    return NextResponse.json(result, { status: 201 });
+    return NextResponse.json(
+      {
+        success: true,
+        message: `Berhasil mendaftarkan ${namaPenghuni} di Kamar ${nomorKamar}`,
+        data: result,
+      },
+      { status: 201 }
+    );
   } catch (error: any) {
     if (error instanceof ApiAuthError) {
       return NextResponse.json({ error: error.message }, { status: error.status });
     }
-    const isValidationError =
-      error.message?.includes('Kamar ini sedang tidak tersedia') ||
-      error.message?.includes('sedang tidak tersedia') ||
+
+    const isClientError =
       error.message?.includes('Kamar tidak ditemukan') ||
-      error.message?.includes('Data penghuni tidak ditemukan') ||
+      error.message?.includes('sedang tidak tersedia') ||
       error.message?.includes('masih memiliki kontrak sewa AKTIF');
 
-    if (isValidationError) {
+    if (isClientError) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
-    console.error('Create kontrak error:', error);
-    return NextResponse.json({ error: error.message || 'Gagal membuat kontrak sewa' }, { status: 500 });
+    console.error('Onboarding error:', error);
+    return NextResponse.json(
+      { error: error.message || 'Gagal memproses onboarding penghuni' },
+      { status: 500 }
+    );
   }
 }

@@ -111,8 +111,8 @@ export default function OwnerPenghuniPage() {
     e.preventDefault();
     setModalLoading(true);
     try {
-      // Step 1: Create Penghuni
-      const resPenghuni = await fetch('/api/penghuni', {
+      // Single Atomic Onboarding Request
+      const res = await fetch('/api/onboarding', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -120,23 +120,7 @@ export default function OwnerPenghuniPage() {
           no_ktp: formData.no_ktp,
           no_hp: formData.no_hp,
           email: formData.email,
-        }),
-      });
-
-      const dataPenghuni = await resPenghuni.json();
-      if (!resPenghuni.ok) {
-        alert(dataPenghuni.error || 'Gagal menyimpan data penghuni');
-        setModalLoading(false);
-        return;
-      }
-
-      // Step 2: Create Kontrak (Triggers Kamar status TERISI, auto first Tagihan & WhatsApp activation link)
-      const resKontrak = await fetch('/api/kontrak', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
           kamar_id: formData.kamar_id,
-          penghuni_id: dataPenghuni.id,
           tanggal_mulai: formData.tanggal_mulai,
           tanggal_selesai: formData.tanggal_selesai,
           harga_sewa_disepakati: formData.harga_sewa_disepakati,
@@ -144,17 +128,18 @@ export default function OwnerPenghuniPage() {
         }),
       });
 
-      if (resKontrak.ok) {
+      const data = await res.json();
+      if (res.ok) {
         setIsModalOpen(false);
-        setToastMessage('Penghuni & Kontrak sewa berhasil dibuat! Pesan instruksi WhatsApp telah dikirim.');
+        setToastMessage(data.message || 'Penghuni & Kontrak sewa berhasil dibuat! Pesan instruksi WhatsApp telah dikirim.');
         setTimeout(() => setToastMessage(null), 6000);
         fetchData();
       } else {
-        const errorData = await resKontrak.json();
-        alert(errorData.error || 'Gagal membuat kontrak sewa');
+        alert(data.error || 'Gagal memproses onboarding sewa');
       }
     } catch (err) {
       console.error('Onboarding error:', err);
+      alert('Terjadi kesalahan koneksi saat onboarding');
     } finally {
       setModalLoading(false);
     }

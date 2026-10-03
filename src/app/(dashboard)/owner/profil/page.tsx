@@ -2,6 +2,7 @@ import { requireRole } from '@/lib/rbac';
 import { Role } from '@prisma/client';
 import { User, Edit3, KeyRound, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
+import LogoutButton from '@/components/LogoutButton';
 
 export default async function OwnerProfilPage() {
   const sessionUser = await requireRole([Role.OWNER, Role.ADMIN]);
@@ -55,6 +56,11 @@ export default async function OwnerProfilPage() {
           </div>
           <ChevronRight className="w-4 h-4 text-slate-400" />
         </Link>
+      </div>
+
+      {/* Logout Action */}
+      <div>
+        <LogoutButton variant="profile" />
       </div>
     </div>
   );

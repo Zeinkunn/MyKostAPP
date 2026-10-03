@@ -8,14 +8,19 @@ import ExportExcelButton from '@/components/ExportExcelButton';
 export default async function OwnerLaporanPage() {
   await requireRole([Role.OWNER, Role.ADMIN]);
 
-  // Approved Payments List
+  // Approved Payments List (use select to avoid leaking unneeded fields & Decimal issues)
   const approvedPayments = await prisma.pembayaran.findMany({
     where: { status_verifikasi: 'DISETUJUI' },
-    include: {
+    select: {
+      id: true,
+      tanggal_bayar: true,
+      metode: true,
+      jumlah_dibayar: true,
       tagihan: {
-        include: {
+        select: {
+          periode: true,
           kontrak: {
-            include: {
+            select: {
               kamar: { select: { nomor_kamar: true } },
               penghuni: { select: { nama: true } },
             },
@@ -28,30 +33,52 @@ export default async function OwnerLaporanPage() {
 
   const totalIncome = approvedPayments.reduce((acc, curr) => acc + Number(curr.jumlah_dibayar), 0);
 
-  // Unpaid Tagihan List
+  // Unpaid Tagihan List (use select)
   const unpaidBills = await prisma.tagihan.findMany({
     where: { status: { in: ['BELUM_BAYAR', 'TERLAMBAT'] } },
-    include: {
+    select: {
+      id: true,
+      periode: true,
+      jumlah: true,
+      denda: true,
+      jatuh_tempo: true,
       kontrak: {
-        include: {
+        select: {
           kamar: { select: { nomor_kamar: true } },
           penghuni: { select: { nama: true } },
         },
       },
     },
+    orderBy: { jatuh_tempo: 'asc' },
   });
 
   const totalUnpaid = unpaidBills.reduce((acc, curr) => acc + Number(curr.jumlah) + Number(curr.denda), 0);
 
+  // Strictly serialize to plain objects (Number for Decimals, ISO string for Dates)
   const serializedPayments = approvedPayments.map((p) => ({
-    ...p,
+    id: p.id,
+    tanggal_bayar: p.tanggal_bayar.toISOString(),
+    metode: p.metode,
     jumlah_dibayar: Number(p.jumlah_dibayar),
+    tagihan: {
+      periode: p.tagihan.periode,
+      kontrak: {
+        kamar: { nomor_kamar: p.tagihan.kontrak.kamar.nomor_kamar },
+        penghuni: { nama: p.tagihan.kontrak.penghuni.nama },
+      },
+    },
   }));
 
   const serializedUnpaid = unpaidBills.map((b) => ({
-    ...b,
+    id: b.id,
+    periode: b.periode,
     jumlah: Number(b.jumlah),
     denda: Number(b.denda),
+    jatuh_tempo: b.jatuh_tempo.toISOString(),
+    kontrak: {
+      kamar: { nomor_kamar: b.kontrak.kamar.nomor_kamar },
+      penghuni: { nama: b.kontrak.penghuni.nama },
+    },
   }));
 
   return (

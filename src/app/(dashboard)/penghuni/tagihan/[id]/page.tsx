@@ -1,9 +1,10 @@
 import { prisma } from '@/lib/prisma';
 import { requireAuth } from '@/lib/rbac';
-import { formatRupiah, formatDateIndonesian, getStatusBadgeStyle } from '@/lib/utils';
+import { formatRupiah, formatDateIndonesian } from '@/lib/utils';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { CheckCircle2, Clock, Upload, Download, ArrowLeft, Building2, ShieldCheck } from 'lucide-react';
+import { Upload, ArrowLeft, ShieldCheck } from 'lucide-react';
+import PrintButton from '@/components/PrintButton';
 
 export default async function DetailTagihanPage({
   params,
@@ -16,18 +17,52 @@ export default async function DetailTagihanPage({
 
   const tagihan = await prisma.tagihan.findUnique({
     where: { id: tagihanId },
-    include: {
+    select: {
+      id: true,
+      periode: true,
+      jumlah: true,
+      denda: true,
+      jatuh_tempo: true,
+      status: true,
       kontrak: {
-        include: {
-          kamar: { include: { properti: true } },
-          penghuni: true,
+        select: {
+          id: true,
+          penghuni: {
+            select: {
+              id: true,
+              user_id: true,
+              nama: true,
+            },
+          },
+          kamar: {
+            select: {
+              nomor_kamar: true,
+              tipe: true,
+              properti: {
+                select: { nama: true },
+              },
+            },
+          },
         },
       },
-      pembayaran: { orderBy: { tanggal_bayar: 'desc' } },
+      pembayaran: {
+        select: {
+          id: true,
+          metode: true,
+          tanggal_bayar: true,
+          status_verifikasi: true,
+        },
+        orderBy: { tanggal_bayar: 'desc' },
+      },
     },
   });
 
   if (!tagihan) {
+    notFound();
+  }
+
+  // IDOR Protection: Tenant can only view their own bill. Owner/Admin can view any.
+  if (session.role === 'PENGHUNI' && tagihan.kontrak.penghuni.user_id !== session.id) {
     notFound();
   }
 
@@ -42,14 +77,14 @@ export default async function DetailTagihanPage({
       {/* Back Button */}
       <Link
         href="/penghuni/tagihan"
-        className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600 hover:text-slate-900"
+        className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600 hover:text-slate-900 no-print"
       >
         <ArrowLeft className="w-4 h-4" />
         <span>Kembali ke Daftar Tagihan</span>
       </Link>
 
       {/* Kwitansi / Invoice Card Container */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden print-card">
         {/* Card Header Banner */}
         <div className={`p-6 text-white ${isLunas ? 'bg-emerald-600' : 'bg-blue-600'}`}>
           <div className="flex justify-between items-start">
@@ -140,17 +175,13 @@ export default async function DetailTagihanPage({
                 <span>Kwitansi ini lunas dan terverifikasi sah oleh sistem pengelola kost.</span>
               </div>
 
-              <button
-                onClick={() => window.print()}
-                className="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs rounded-xl shadow-sm transition-all flex items-center justify-center gap-2"
-              >
-                <Download className="w-4 h-4" />
-                <span>Unduh / Cetak Kwitansi PDF</span>
-              </button>
+              <div className="no-print">
+                <PrintButton />
+              </div>
             </div>
           ) : (
             /* BELUM LUNAS - Action to Upload Proof */
-            <div className="pt-4 space-y-2">
+            <div className="pt-4 space-y-2 no-print">
               <Link
                 href={`/penghuni/tagihan/${tagihan.id}/bayar`}
                 className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-xl shadow-md shadow-emerald-600/20 transition-all flex items-center justify-center gap-2 text-center"

@@ -3,6 +3,7 @@ import { Role } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { User, FileText, KeyRound, HelpCircle, ChevronRight, Edit3 } from 'lucide-react';
 import Link from 'next/link';
+import LogoutButton from '@/components/LogoutButton';
 
 export default async function PenghuniProfilPage() {
   const sessionUser = await requireRole([Role.PENGHUNI]);
@@ -102,6 +103,11 @@ export default async function PenghuniProfilPage() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Logout Action */}
+      <div>
+        <LogoutButton variant="profile" />
       </div>
     </div>
   );

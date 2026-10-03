@@ -6,6 +6,7 @@ import { uploadFile } from '@/lib/r2';
 import { sendWhatsAppMessage } from '@/lib/fonnte';
 import { createNotifikasi, createNotifikasiOwnerAdmin } from '@/lib/notifikasi';
 import { logAktivitas } from '@/lib/log';
+import { z } from 'zod';
 
 export async function GET() {
   try {
@@ -35,28 +36,61 @@ export async function GET() {
   }
 }
 
+const verifyPaymentSchema = z.object({
+  id: z.string().min(1, 'ID Pembayaran wajib diisi'),
+  status_verifikasi: z.enum([StatusVerifikasi.DISETUJUI, StatusVerifikasi.DITOLAK], {
+    errorMap: () => ({ message: 'Status verifikasi harus DISETUJUI atau DITOLAK' }),
+  }),
+});
+
 // Upload proof of payment by Penghuni
 export async function POST(req: NextRequest) {
   try {
     const session = await requireAuthApi();
     const formData = await req.formData();
 
-    const tagihan_id = formData.get('tagihan_id') as string;
-    const jumlah_dibayar = formData.get('jumlah_dibayar') as string;
-    const metode = (formData.get('metode') as string) || 'Transfer Bank';
-    const file = formData.get('bukti') as File;
+    const tagihan_id = (formData.get('tagihan_id') as string)?.trim();
+    const metode = ((formData.get('metode') as string)?.trim()) || 'Transfer Bank';
+    const file = formData.get('bukti') as File | null;
 
     if (!tagihan_id || !file) {
-      return NextResponse.json({ error: 'Tagihan dan Bukti Pembayaran wajib dikirim' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'ID Tagihan dan file Bukti Pembayaran wajib disertakan' },
+        { status: 400 }
+      );
     }
 
     const tagihan = await prisma.tagihan.findUnique({
       where: { id: tagihan_id },
-      include: { kontrak: { include: { kamar: true, penghuni: true } } },
+      include: {
+        kontrak: { include: { kamar: true, penghuni: true } },
+        pembayaran: {
+          where: { status_verifikasi: StatusVerifikasi.PENDING },
+        },
+      },
     });
 
     if (!tagihan) {
       return NextResponse.json({ error: 'Tagihan tidak ditemukan' }, { status: 404 });
+    }
+
+    // Rule: Reject if bill is already paid
+    if (tagihan.status === StatusTagihan.LUNAS) {
+      return NextResponse.json(
+        { error: 'Tagihan ini sudah berstatus LUNAS. Tidak dapat melakukan pembayaran ulang.' },
+        { status: 400 }
+      );
+    }
+
+    // Rule: Reject if there is already a PENDING payment for this bill
+    if (tagihan.pembayaran.length > 0) {
+      return NextResponse.json(
+        {
+          error:
+            'Tagihan ini sudah memiliki bukti pembayaran yang sedang menunggu verifikasi admin. Mohon tunggu proses verifikasi.',
+        },
+        { status: 400 }
+      );
     }
 
     // IDOR Protection: Verify tenant owns this bill
@@ -66,14 +100,18 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Upload to Cloudflare R2 (or local fallback)
+    // Server-side calculation: Ignore client-supplied jumlah_dibayar.
+    // Server computes exactly = jumlah tagihan + denda keterlambatan.
+    const calculatedAmount = Number(tagihan.jumlah) + Number(tagihan.denda);
+
+    // Upload to Cloudflare R2 (or local fallback in dev)
     const fileBuffer = Buffer.from(await file.arrayBuffer());
     const buktiUrl = await uploadFile(fileBuffer, file.name, file.type);
 
     const pembayaran = await prisma.pembayaran.create({
       data: {
         tagihan_id,
-        jumlah_dibayar: parseFloat(jumlah_dibayar || String(tagihan.jumlah)),
+        jumlah_dibayar: calculatedAmount,
         metode,
         bukti_url: buktiUrl,
         status_verifikasi: StatusVerifikasi.PENDING,
@@ -101,64 +139,99 @@ export async function POST(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   try {
     const session = await requireRoleApi([Role.OWNER, Role.ADMIN]);
-    const { id, status_verifikasi } = await req.json();
+    const body = await req.json();
 
-    if (!id || !status_verifikasi) {
-      return NextResponse.json({ error: 'ID dan status verifikasi wajib diisi' }, { status: 400 });
+    const parseResult = verifyPaymentSchema.safeParse(body);
+    if (!parseResult.success) {
+      const errorMsg = parseResult.error.errors.map((e) => e.message).join(', ');
+      return NextResponse.json({ error: errorMsg }, { status: 400 });
+    }
+
+    const { id, status_verifikasi } = parseResult.data;
+
+    // Rule: Fetch current payment to ensure it is currently PENDING
+    const existingPembayaran = await prisma.pembayaran.findUnique({
+      where: { id },
+      include: {
+        tagihan: {
+          include: {
+            kontrak: {
+              include: {
+                penghuni: true,
+                kamar: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!existingPembayaran) {
+      return NextResponse.json({ error: 'Data pembayaran tidak ditemukan' }, { status: 404 });
+    }
+
+    if (existingPembayaran.status_verifikasi !== StatusVerifikasi.PENDING) {
+      return NextResponse.json(
+        {
+          error: `Pembayaran ini sudah pernah diproses sebelumnya (status saat ini: ${existingPembayaran.status_verifikasi}).`,
+        },
+        { status: 409 }
+      );
     }
 
     const result = await prisma.$transaction(async (tx) => {
       const pembayaran = await tx.pembayaran.update({
         where: { id },
         data: { status_verifikasi },
-        include: {
-          tagihan: {
-            include: { kontrak: { include: { penghuni: true, kamar: true } } },
-          },
-        },
       });
 
       if (status_verifikasi === StatusVerifikasi.DISETUJUI) {
         await tx.tagihan.update({
-          where: { id: pembayaran.tagihan_id },
+          where: { id: existingPembayaran.tagihan_id },
           data: { status: StatusTagihan.LUNAS },
         });
       }
+      // If DITOLAK, tagihan status remains unchanged (BELUM_BAYAR / TERLAMBAT)
 
       return pembayaran;
     });
 
-    // Send WA notification to Penghuni (Alur 6.2 Step 5)
-    const phone = result.tagihan.kontrak.penghuni.no_hp;
-    const nama = result.tagihan.kontrak.penghuni.nama;
-    const statusText = status_verifikasi === 'DISETUJUI' ? 'LUNAS & DISETUJUI' : 'DITOLAK';
+    // Send notifications strictly after transaction commits
+    const phone = existingPembayaran.tagihan.kontrak.penghuni.no_hp;
+    const nama = existingPembayaran.tagihan.kontrak.penghuni.nama;
+    const nomorKamar = existingPembayaran.tagihan.kontrak.kamar.nomor_kamar;
+    const periode = existingPembayaran.tagihan.periode;
+    const statusText = status_verifikasi === StatusVerifikasi.DISETUJUI ? 'LUNAS & DISETUJUI' : 'DITOLAK';
 
-    const waMsg = `Halo Sdr/i ${nama},\n\nStatus pembayaran tagihan kamar ${result.tagihan.kontrak.kamar.nomor_kamar} periode ${result.tagihan.periode} telah: *${statusText}*.\n\nTerima kasih,\nMyKost Management`;
-
+    const waMsg = `Halo Sdr/i ${nama},\n\nStatus pembayaran tagihan kamar ${nomorKamar} periode ${periode} telah: *${statusText}*.\n\nTerima kasih,\nMyKost Management`;
     await sendWhatsAppMessage({ target: phone, message: waMsg });
 
-    // Send In-App Notification to Penghuni if user_id linked
-    if (result.tagihan.kontrak.penghuni.user_id) {
+    if (existingPembayaran.tagihan.kontrak.penghuni.user_id) {
       await createNotifikasi({
-        user_id: result.tagihan.kontrak.penghuni.user_id,
+        user_id: existingPembayaran.tagihan.kontrak.penghuni.user_id,
         judul: `Pembayaran ${statusText}`,
-        pesan: `Pembayaran Anda untuk periode ${result.tagihan.periode} telah ${statusText.toLowerCase()} oleh pengelola.`,
+        pesan: `Pembayaran Anda untuk periode ${periode} telah ${statusText.toLowerCase()} oleh pengelola kost.`,
         tipe: 'PEMBAYARAN',
       });
     }
 
-    // Audit Log (Priority 6)
+    // Audit Log
     await logAktivitas(
       session.id,
       'verifikasi_pembayaran',
-      `Verifikasi pembayaran (${statusText}) periode ${result.tagihan.periode} untuk Kamar ${result.tagihan.kontrak.kamar.nomor_kamar} (${result.tagihan.kontrak.penghuni.nama})`
+      `Verifikasi pembayaran (${statusText}) periode ${periode} untuk Kamar ${nomorKamar} (${nama})`
     );
 
-    return NextResponse.json(result);
+    return NextResponse.json({
+      success: true,
+      message: `Pembayaran berhasil diubah menjadi ${status_verifikasi}`,
+      result,
+    });
   } catch (error: any) {
     if (error instanceof ApiAuthError) {
       return NextResponse.json({ error: error.message }, { status: error.status });
     }
+    console.error('Verifikasi pembayaran error:', error);
     return NextResponse.json({ error: error.message || 'Gagal memverifikasi pembayaran' }, { status: 500 });
   }
 }

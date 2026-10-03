@@ -5,18 +5,18 @@ import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
   BedDouble,
+  Users,
   CheckCircle2,
-  MessageSquareWarning,
-  User,
+  Menu,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const adminMobileNav = [
   { label: 'Dashboard', href: '/owner/dashboard', icon: LayoutDashboard },
   { label: 'Kamar', href: '/owner/kamar', icon: BedDouble },
+  { label: 'Penghuni', href: '/owner/penghuni', icon: Users },
   { label: 'Verifikasi', href: '/owner/verifikasi', icon: CheckCircle2 },
-  { label: 'Komplain', href: '/owner/pengaduan', icon: MessageSquareWarning },
-  { label: 'Profil', href: '/owner/profil', icon: User },
+  { label: 'Lainnya', href: '/owner/menu', icon: Menu },
 ];
 
 export default function AdminBottomNav() {
