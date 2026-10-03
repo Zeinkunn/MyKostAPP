@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Bell, CheckCheck, Clock, ShieldAlert, CreditCard, MessageSquare } from 'lucide-react';
-import { formatDateIndonesian } from '@/lib/utils';
+import { Bell, CheckCheck, Clock, CreditCard, MessageSquare } from 'lucide-react';
 
 interface NotifikasiItem {
   id: string;
@@ -17,24 +16,44 @@ export default function NotifikasiList() {
   const [notifications, setNotifications] = useState<NotifikasiItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
 
-  const fetchNotifikasi = async () => {
+  const fetchNotifikasi = async (targetPage = 1) => {
+    if (targetPage === 1) {
+      setLoading(true);
+    } else {
+      setLoadingMore(true);
+    }
+
     try {
-      const res = await fetch('/api/notifikasi');
+      const res = await fetch(`/api/notifikasi?page=${targetPage}&limit=20`);
       if (res.ok) {
         const data = await res.json();
-        setNotifications(data.notifikasi || []);
+        const items = data.notifikasi || [];
+        const more = data.pagination ? data.pagination.hasMore : false;
+
+        if (targetPage === 1) {
+          setNotifications(items);
+        } else {
+          setNotifications((prev) => [...prev, ...items]);
+        }
+
         setUnreadCount(data.unreadCount || 0);
+        setPage(targetPage);
+        setHasMore(more);
       }
     } catch (err) {
       console.error('Fetch notifikasi error:', err);
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   };
 
   useEffect(() => {
-    fetchNotifikasi();
+    fetchNotifikasi(1);
   }, []);
 
   const handleMarkAllRead = async () => {
@@ -144,6 +163,19 @@ export default function NotifikasiList() {
               </div>
             </div>
           ))}
+
+          {hasMore && (
+            <div className="text-center pt-2">
+              <button
+                type="button"
+                disabled={loadingMore}
+                onClick={() => fetchNotifikasi(page + 1)}
+                className="px-5 py-2.5 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs rounded-xl border border-slate-200 shadow-xs transition-all disabled:opacity-50"
+              >
+                {loadingMore ? 'Memuat...' : 'Muat Lebih Banyak Notifikasi'}
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -109,17 +109,23 @@ export async function PUT(req: NextRequest) {
       );
     }
 
-    const updatedUser = await prisma.user.update({
-      where: { id: session.id },
-      data: { nama, email },
-    });
-
-    if (session.role === Role.PENGHUNI) {
-      await prisma.penghuni.updateMany({
-        where: { user_id: session.id },
+    // Atomically synchronize user and penghuni record
+    const updatedUser = await prisma.$transaction(async (tx) => {
+      const user = await tx.user.update({
+        where: { id: session.id },
         data: { nama, email },
       });
-    }
+
+      if (session.role === Role.PENGHUNI) {
+        await tx.penghuni.updateMany({
+          where: { user_id: session.id },
+          data: { nama, email },
+        });
+      }
+
+      return user;
+    });
+
 
     // Refresh session cookie and PRESERVE kamar_id and token_version
     await setSessionCookie({

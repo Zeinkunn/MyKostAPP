@@ -1,112 +1,219 @@
-# MyKost — Aplikasi Manajemen Kost PWA
+# MyKost — Aplikasi Manajemen Kost Modern PWA
 
-**MyKost** adalah aplikasi manajemen kost berbasis Progressive Web App (PWA) *full-stack* yang dibangun menggunakan **Next.js 16 (App Router)**, **Tailwind CSS v4.3**, **Supabase (PostgreSQL)** via **Prisma ORM**, **Cloudflare R2 Storage (S3 API)**, dan **Fonnte WhatsApp API**.
+**MyKost** adalah sistem manajemen kost berbasis Progressive Web App (PWA) *full-stack* yang dibangun menggunakan **Next.js 15 (App Router)**, **Tailwind CSS v4**, **Supabase (PostgreSQL)** via **Prisma ORM v6**, **Cloudflare R2 Storage (S3 API)**, dan **Fonnte WhatsApp API**.
 
-Aplikasi ini mengintegrasikan seluruh operasional kamar, kontrak sewa, tagihan bulanan, verifikasi pembayaran, serta pengaduan/maintenance dalam satu *codebase* responsif untuk 3 peran pengguna: **Owner**, **Admin**, dan **Penghuni**.
+Aplikasi ini mengintegrasikan seluruh operasional kamar, kontrak sewa, tagihan bulanan, pembayaran tunai & transfer, verifikasi bukti bayar, serta komplain fasilitas dalam satu sistem untuk 3 peran pengguna: **Owner**, **Admin**, dan **Penghuni**.
 
 ---
 
 ## 🌟 Fitur Utama
 
 ### 🏢 Panel Pengelola (Owner & Admin)
-- **Dashboard Real-Time**: Statistik persentase okupansi kamar, pendapatan bulanan terverifikasi lunas, piutang tertunggak, dan komplain aktif.
-- **Manajemen Properti & Kamar**: CRUD unit kamar, tipe sewa, harga, fasilitas, dan toggle status (`KOSONG`, `TERISI`, `MAINTENANCE`).
-- **Alur Onboarding Penghuni (6.1)**: Pendaftaran penghuni & kontrak sewa terpadu, otomatis mengubah status kamar jadi `TERISI`, generate tagihan pertama, dan mengirim instruksi aktivasi via WhatsApp.
-- **Manajemen Tagihan & Auto-Generator**: Pembuatan invoice otomatis bulanan, penyesuaian harga & denda keterlambatan dinamis.
-- **Verifikasi Pembayaran**: Peninjauan bukti transfer dengan modal preview foto, tombol *Approve* / *Reject*, dan konfirmasi otomatis ke WA penghuni.
-- **Laporan Keuangan & Audit Trail**: Ringkasan kas lunas vs piutang, cetak laporan, dan log aktivitas pengelola.
-- **Manajemen User & Pengaturan**: Penambahan pengelola baru (Owner/Admin) dan penyesuaian denda & template WA.
+- **Dashboard Real-Time**: Statistik okupansi kamar, pendapatan bulanan (pokok + denda), piutang tertunggak, dan komplain aktif.
+- **Manajemen Properti & Kamar**: CRUD kamar dengan proteksi nomor kamar unik per properti (`@@unique([properti_id, nomor_kamar])`).
+- **Onboarding Atomik Terpadu (`/api/onboarding`)**: Pendaftaran penghuni, binding kamar (`TERISI` kondisional anti-race condition), pembuatan kontrak sewa, pembuatan tagihan pertama, dan pengiriman tautan aktivasi WhatsApp via transaksi tunggal.
+- **Checkout Aman (`/api/checkout`)**: Pengecekan tunggakan tagihan dan pembayaran pending, validasi potongan deposit (`<= deposit_awal`), dan pelepasan kamar ke status `KOSONG` secara atomik.
+- **Manajemen Tagihan & Pembayaran**:
+  - Penyesuaian manual tagihan & denda dengan pencatatan alasan wajib ke Audit Log (`PATCH /api/tagihan`).
+  - Pencatatan pembayaran tunai instan terverifikasi lunas (`POST /api/pembayaran/tunai`).
+  - Verifikasi pembayaran transfer via thumbnail dan fullscreen preview bukti bayar.
+- **Laporan Keuangan Excel**: Ekspor data laporan bulanan ke format spreadsheet `.xlsx` menggunakan `exceljs`.
+- **Manajemen User & Reset Sandi**: Penambahan pengelola baru (Admin/Owner) serta reset sandi Admin oleh Owner (`PATCH /api/users`).
+- **Pengaturan Sistem Dinamis**: Konfigurasi mode denda (`HARIAN` / `TETAP`), tarif denda, batas reminder (H-X), dan template WhatsApp kustom.
+- **Audit Trail Paginasi**: Pelacakan aktivitas pengelola (`/api/log`) dengan paginasi dan tombol muat lebih banyak.
 
 ### 📱 Panel Penghuni (Mobile PWA)
-- **Beranda Interaktif**: Ringkasan kamar aktif, hitung mundur sisa hari sewa, dan preview tagihan bulan ini.
-- **Daftar Tagihan & Kwitansi Read-Only**: Halaman rincian tagihan belum lunas vs kwitansi digital sah lunas (tanpa tombol bayar) yang dapat diunduh/dicetak.
-- **Upload Bukti Pembayaran**: Pengambilan foto resi transfer langsung dari kamera HP (`capture="environment"`) dengan kompresi gambar otomatis client-side sebelum diunggah ke Cloudflare R2.
-- **Pengaduan & Maintenance (6.3)**: Pengajuan keluhan kerusakan fasilitas (+ foto) dengan pelacakan status (`BARU` → `DIPROSES` → `SELESAI`).
-- **Profil & Kontrak Digital**: Akses rincian kontrak sewa digital, data pribadi, dan pusat bantuan.
+- **Beranda Interaktif**: Sapaan personal dengan nama penghuni langsung dari session, informasi kamar aktif, hitung mundur sisa sewa, dan preview tagihan aktif.
+- **Aktivasi Akun Berbasis Token WhatsApp**: Pendaftaran akun aman dengan validasi token sekali pakai (`AktivasiToken`) bertaut nomor HP resmi di kontrak.
+- **Lupa & Reset Kata Sandi Mandiri**: Pengiriman token reset via WhatsApp dan form pengaturan kata sandi baru yang otomatis mencabut seluruh sesi aktif (`token_version`).
+- **Rincian Tagihan & Kwitansi Digital**: Halaman cetak kwitansi resmi (@media print CSS khusus menyembunyikan header/navigasi) dengan proteksi IDOR kepemilikan.
+- **Unggah Bukti Bayar & Pengaduan**: Validasi berkas berbasis magic bytes (JPEG/PNG/WebP), nama berkas acak UUID, pembatasan 3 foto, serta penyajian gambar aman melalui presigned URL berumur pendek (`/api/files?key=...`).
+- **Paginasi Notifikasi**: Pelacakan notifikasi in-app dengan paginasi dan tombol muat lebih banyak.
 
 ---
 
-## 🛠️ Tech Stack & Library
+## 🏗️ Arsitektur & Keamanan Sistem
+
+1. **Role-Based Access Control (RBAC)**:
+   - Edge Middleware (`src/middleware.ts`) untuk redirect kilat rute dashboard jika cookie sesi tidak ada.
+   - Server Component Layout guards (`owner/layout.tsx`, `penghuni/layout.tsx`, dan sub-layout Owner-only untuk `users`, `log`, `pengaturan`).
+   - Helper API terstandar `requireAuthApi()` dan `requireRoleApi([Role])` dengan `handleApiError` yang menyembunyikan error mentah database pada status 500.
+2. **Session Revocation (`token_version`)**:
+   - Kolom `token_version` pada model `User` disertakan dalam JWT session.
+   - Sesi lama di semua perangkat langsung kedaluwarsa seketika kata sandi diubah atau direset.
+3. **Penyimpanan Media & Cloudflare R2**:
+   - Berkas diunggah dengan nama acak `crypto.randomUUID()` dan diverifikasi melalui *magic bytes*.
+   - Tidak ada fallback penyimpanan lokal pada environment produksi (`NODE_ENV === 'production'`).
+   - Berkas disajikan via endpoint otorisasi `GET /api/files?key=...` yang menghasilkan presigned URL sementara (15 menit).
+4. **Service Worker & PWA Hardening**:
+   - Versi cache `mykost-cache-v2` dengan instalasi toleran per berkas.
+   - Strategi *Network-Only* untuk seluruh rute `/api/*` dan navigasi dashboard (mencegah kebocoran data terautentikasi ke cache publik).
+   - Fallback navigasi offline ke `/offline.html` statis dan respons JSON `{ error: 'offline' }` 503 untuk API.
+   - Pembersihan otomatis cache browser saat pengguna keluar melalui `LogoutButton`.
+
+---
+
+## 🛠️ Tech Stack
 
 | Komponen | Teknologi |
 | :--- | :--- |
-| **Framework** | Next.js 16 (App Router, Server Components, Server Actions) |
-| **Styling** | Tailwind CSS v4.3 + Lucide React Icons |
-| **Database & ORM** | Supabase (PostgreSQL) + Prisma ORM v6 |
-| **Media Storage** | Cloudflare R2 (S3-compatible API via `@aws-sdk/client-s3`) |
-| **Autentikasi** | Auth Session RBAC (`bcryptjs` + `jose`) |
-| **WhatsApp Provider** | Fonnte WhatsApp API (`api.fonnte.com`) |
-| **Client Compression**| `browser-image-compression` |
-| **PWA & Offline** | Web App Manifest (`manifest.json`) + Service Worker (`sw.js`) |
+| **Framework** | Next.js 15 (App Router, React 19, Server Components) |
+| **Styling** | Tailwind CSS v4 + Lucide React Icons |
+| **Database & ORM** | PostgreSQL (Supabase) + Prisma ORM v6 |
+| **Media Storage** | Cloudflare R2 (`@aws-sdk/client-s3` + `@aws-sdk/s3-request-presigner`) |
+| **Autentikasi** | Session Cookie JWT via `jose` + `bcryptjs` |
+| **WhatsApp Gateway** | Fonnte WhatsApp API |
+| **Validasi Skema** | Zod v3 |
+| **Laporan** | ExcelJS |
+| **Pengujian & Linting** | Vitest + ESLint 9 |
 
 ---
 
-## 🚀 Cara Menginstall & Menjalankan Proyek
+## 🚀 Setup & Instalasi Lokal
 
-### 1. Clone Repository
+### 1. Clone & Install Dependencies
 ```bash
 git clone https://github.com/Zeinkunn/MyKostAPP.git
 cd MyKostAPP
-```
-
-### 2. Install Dependencies
-```bash
+git checkout dev
 npm install
 ```
 
-### 3. Konfigurasi Environment Variables (`.env`)
-Salin file `.env.example` menjadi `.env`:
+### 2. Konfigurasi Environment Variables (`.env`)
+Salin contoh environment:
 ```bash
 cp .env.example .env
 ```
-
-Isi kredensial di dalam file `.env`:
+Pastikan variabel berikut terisi dengan benar di `.env`:
 ```env
-# Supabase PostgreSQL connection
+# Koneksi Database Supabase
+# DATABASE_URL: Pooler port 6543 (transaction mode) untuk runtime query
 DATABASE_URL="postgresql://postgres.xxx:PASSWORD@aws-0-region.pooler.supabase.com:6543/postgres?pgbouncer=true"
+
+# DIRECT_URL: Direct/Session port 5432 untuk Prisma db push / migrasi DDL
 DIRECT_URL="postgresql://postgres.xxx:PASSWORD@aws-0-region.supabase.com:5432/postgres"
 
-# JWT Secret Key
-JWT_SECRET="ganti-dengan-32-karakter-secret-key"
+# JWT Secret: Minimal 32 karakter acak (jangan gunakan placeholder contoh)
+# Generate via: openssl rand -hex 32
+JWT_SECRET="589302f913d78bda4d860e1c87a91afe77308977a5bae502a46c2f38b97e3537"
 
-# Cloudflare R2 Storage (S3-compatible)
-R2_ACCOUNT_ID="account-id-cloudflare-anda"
-R2_ACCESS_KEY_ID="access-key-id-r2-anda"
-R2_SECRET_ACCESS_KEY="secret-access-key-r2-anda"
+# Cloudflare R2 Storage (S3 API)
+R2_ACCOUNT_ID="your-cloudflare-account-id"
+R2_ACCESS_KEY_ID="your-r2-access-key-id"
+R2_SECRET_ACCESS_KEY="your-r2-secret-access-key"
 R2_BUCKET_NAME="mykost"
-R2_PUBLIC_DOMAIN="https://domain-public-r2-anda.dev"
+R2_PUBLIC_DOMAIN="https://your-r2-domain.dev"
 
 # Fonnte WhatsApp API Token
-FONNTE_API_TOKEN="token-fonnte-wa-anda"
+FONNTE_API_TOKEN="your-fonnte-api-token"
 
 # Cron Secret Token
-CRON_SECRET="secret-token-untuk-endpoint-cron"
+CRON_SECRET="your-secure-cron-secret-token"
 ```
 
-### 4. Push Database Schema & Seed Data
+### 3. Pengecekan Duplikasi, Sinkronisasi Skema & Seed
 ```bash
-# Push Prisma schema to Supabase database
+# Periksa data duplikat sebelum penerapan unique constraint
+npx tsx scripts/check-duplicates.ts
+
+# Sinkronisasikan skema Prisma ke database Supabase
 npx prisma db push
 
-# Seed data awal (Owner, Admin, Properti, Kamar, Penghuni, Kontrak, & Tagihan)
+# Jalankan seeder database (idempotent, password bcrypt terenkripsi, tanggal dinamis)
 npx tsx prisma/seed.ts
 ```
 
-### 5. Jalankan Server Development
+### 4. Menjalankan Pengujian & Server Lokal
 ```bash
+# Jalankan test suite unit Vitest
+npm test
+
+# Jalankan linter ESLint
+npm run lint
+
+# Verifikasi kompilasi TypeScript
+npx tsc --noEmit
+
+# Jalankan server development
 npm run dev
 ```
-Buka **`http://localhost:3000`** di browser Anda.
+Buka browser pada **`http://localhost:3000`**.
 
 ---
 
-## 🔑 Kredensial Akses Default (Development)
+## 🔑 Kredensial Akun Default (Hasil Seeder)
 
-- **Owner**: `owner@mykost.com` (Password: `password123`)
-- **Admin**: `admin@mykost.com` (Password: `password123`)
-- **Penghuni**: `dimas@gmail.com` atau No HP `081234567890` (Password: `password123`)
+| Role | Email / Nomor HP | Kata Sandi |
+| :--- | :--- | :--- |
+| **Owner** | `owner@mykost.com` | `password123` |
+| **Admin** | `admin@mykost.com` | `password123` |
+| **Penghuni** | `dimas@gmail.com` / `081234567890` | `password123` |
+
+---
+
+## 📡 Daftar Endpoint API
+
+### 🔐 Autentikasi & Akun
+- `POST /api/auth/login`: Autentikasi dengan rate limiter bersama berbasis database (`LoginAttempt`) dan normalisasi identifier.
+- `POST /api/auth/register`: Pendaftaran penghuni dengan verifikasi token aktivasi WhatsApp sekali pakai.
+- `POST /api/auth/logout`: Pencabutan cookie sesi dan instruksi purge cache PWA.
+- `POST /api/auth/forgot-password`: Permintaan tautan reset sandi via WhatsApp.
+- `POST /api/auth/reset-password`: Reset kata sandi dengan token WA dan penambahan `token_version`.
+- `GET /api/users`: Mendapatkan daftar pengelola kost (Owner only).
+- `POST /api/users`: Menambahkan user pengelola baru (Owner only).
+- `PUT /api/users`: Memperbarui profil akun sendiri secara sinkron ke tabel User & Penghuni.
+- `PATCH /api/users`: Reset kata sandi akun Admin oleh Owner.
+- `PUT /api/users/password`: Mengubah kata sandi mandiri dan memperbarui `token_version`.
+
+### 🛏️ Operasional Kost
+- `POST /api/onboarding`: Onboarding sewa atomik (tenant reuse, kontrak baru, tagihan ke-1, update kamar `KOSONG` -> `TERISI` via `updateMany`, kirim WA).
+- `POST /api/checkout`: Penyelesaian sewa terverifikasi (bebas tunggakan tagihan dan pembayaran pending, pelepasan status kamar `TERISI` -> `KOSONG`).
+- `GET /api/kamar`, `POST /api/kamar`, `PUT /api/kamar`, `DELETE /api/kamar`: Kelola kamar (field tenant disaring untuk role Penghuni).
+- `GET /api/properti`, `POST /api/properti`: Kelola properti kost.
+- `GET /api/kontrak`, `POST /api/kontrak`: Kelola kontrak sewa kamar dengan pencegahan *double booking*.
+- `GET /api/penghuni`, `POST /api/penghuni`: Kelola data penghuni kost.
+
+### 💰 Tagihan & Pembayaran
+- `GET /api/tagihan`: Mengambil daftar tagihan sewa.
+- `POST /api/tagihan`: Menghasilkan tagihan bulanan otomatis untuk kontrak aktif.
+- `PATCH /api/tagihan`: Menyesuaikan nominal pokok atau denda tagihan (wajib alasan ke audit log).
+- `GET /api/pembayaran`, `POST /api/pembayaran`: Unggah bukti transfer sewa (nominal dihitung dari server = pokok + denda).
+- `PUT /api/pembayaran`: Verifikasi pembayaran (`DISETUJUI` / `DITOLAK`) dengan notifikasi WA otomatis.
+- `POST /api/pembayaran/tunai`: Pencatatan pembayaran tunai langsung di tempat oleh Owner/Admin.
+- `GET /api/files?key=...`: Pengambilan berkas bukti bayar/komplain terproteksi otorisasi via presigned URL.
+
+### 🛠️ Sistem, Notifikasi & Audit
+- `GET /api/pengaduan`, `POST /api/pengaduan`, `PUT /api/pengaduan`: Komplain kerusakan fasilitas (maksimal 3 foto berkas).
+- `GET /api/pengaturan`, `PUT /api/pengaturan`: Konfigurasi mode denda (`HARIAN` / `TETAP`), batas reminder, dan template WA.
+- `GET /api/notifikasi`, `PUT /api/notifikasi`: In-app notification dengan paginasi.
+- `GET /api/log`: Log audit aktivitas pengelola dengan paginasi.
+- `GET /api/cron/tagihan`: Cron job harian (01:00 UTC / 08:00 WIB) untuk auto-generate tagihan awal bulan, kalkulasi denda, dan reminder WA anti-spam (jeda 24 jam).
+
+---
+
+## ⏰ Cara Kerja Cron Otomatis (Vercel Cron)
+
+Sistem cron dikonfigurasikan pada `vercel.json`:
+```json
+{
+  "crons": [
+    {
+      "path": "/api/cron/tagihan",
+      "schedule": "0 1 * * *"
+    }
+  ]
+}
+```
+1. **Jadwal Eksekusi**: Berjalan setiap hari pukul `01:00 UTC` (`08:00 WIB` waktu Jakarta).
+2. **Keamanan**: Wajib menyertakan header `Authorization: Bearer <CRON_SECRET>`. Permintaan tanpa secret akan langsung ditolak (401 Unauthorized / *fail-closed*).
+3. **Zona Waktu**: Seluruh penentuan "hari ini" dan perhitungan selisih hari jatuh tempo menggunakan zona waktu **Asia/Jakarta** (`Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta' })`).
+4. **Auto-Generate Awal Bulan**: Setiap tanggal 1 WIB, cron secara otomatis membuat tagihan periode baru untuk seluruh kontrak aktif.
+5. **Skema Denda**: Menghitung denda secara dinamis berdasarkan pengaturan database:
+   - `HARIAN`: `denda_per_hari * hari_terlambat`
+   - `TETAP`: nominal flat `denda_per_hari` satu kali.
+6. **Anti-Spam 24 Jam**: Reminder WhatsApp hanya dikirim jika tagihan berada dalam jendela `H - batas_reminder_hari` dan belum pernah diingatkan dalam kurun waktu 24 jam terakhir (`terakhir_diingatkan_at`).
 
 ---
 
 ## 📄 Lisensi
-[MIT License](LICENSE) — Dikembangkan untuk efisiensi operasional manajemen kost di Indonesia.
+[MIT License](LICENSE) — Dikembangkan untuk efisiensi dan keamanan operasional manajemen kost di Indonesia.

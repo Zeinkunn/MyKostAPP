@@ -38,7 +38,16 @@ export default async function PenghuniBerandaPage() {
 
   return (
     <div className="space-y-6">
+      {/* Welcome Banner */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-1">
+        <div>
+          <h1 className="text-xl md:text-2xl font-bold text-slate-900">Halo, {user.nama}! 👋</h1>
+          <p className="text-xs text-slate-500">Selamat datang kembali di hunian sewa Anda.</p>
+        </div>
+      </div>
+
       {/* Active Kamar Card */}
+
       {activeKamar ? (
         <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
           <div className="flex justify-between items-start">

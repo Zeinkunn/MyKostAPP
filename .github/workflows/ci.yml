@@ -1,0 +1,55 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [dev, main]
+  pull_request:
+    branches: [dev, main]
+
+jobs:
+  validate:
+    name: Lint, Test, and Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Generate Prisma Client
+        run: npx prisma generate
+        env:
+          DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/test?schema=public"
+          DIRECT_URL: "postgresql://postgres:postgres@localhost:5432/test?schema=public"
+
+      - name: Type Check (tsc)
+        run: npx tsc --noEmit
+
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Run Vitest Unit Tests
+        run: npm test
+
+      - name: Build Next.js Application
+        run: npm run build
+        env:
+          NODE_ENV: production
+          JWT_SECRET: "mock_jwt_secret_at_least_32_characters_long_for_ci_pipeline"
+          DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/test?schema=public"
+          DIRECT_URL: "postgresql://postgres:postgres@localhost:5432/test?schema=public"
+          R2_ACCOUNT_ID: "mock-account-id"
+          R2_ACCESS_KEY_ID: "mock-access-key-id"
+          R2_SECRET_ACCESS_KEY: "mock-secret-access-key"
+          R2_BUCKET_NAME: "mock-bucket"
+          R2_PUBLIC_DOMAIN: "mock.r2.dev"
+          FONNTE_API_TOKEN: "mock-fonnte-token"
+          CRON_SECRET: "mock-cron-secret-for-ci"
