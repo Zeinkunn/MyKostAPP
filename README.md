@@ -90,7 +90,7 @@ Pastikan variabel berikut terisi dengan benar di `.env`:
 # DATABASE_URL: Pooler port 6543 (transaction mode) untuk runtime query
 DATABASE_URL="postgresql://postgres.xxx:PASSWORD@aws-0-region.pooler.supabase.com:6543/postgres?pgbouncer=true"
 
-# DIRECT_URL: Direct/Session port 5432 untuk Prisma db push / migrasi DDL
+# DIRECT_URL: Direct/Session port 5432 untuk sinkronisasi skema DDL via npx prisma db push
 DIRECT_URL="postgresql://postgres.xxx:PASSWORD@aws-0-region.supabase.com:5432/postgres"
 
 # JWT Secret: Minimal 32 karakter acak (jangan gunakan placeholder contoh)
@@ -112,11 +112,12 @@ CRON_SECRET="your-secure-cron-secret-token"
 ```
 
 ### 3. Pengecekan Duplikasi, Sinkronisasi Skema & Seed
+Proyek ini mengadopsi alur tunggal berbasis **`prisma db push`** (tidak menggunakan `prisma migrate`):
 ```bash
 # Periksa data duplikat sebelum penerapan unique constraint
 npx tsx scripts/check-duplicates.ts
 
-# Sinkronisasikan skema Prisma ke database Supabase
+# Sinkronisasikan skema Prisma langsung ke database Supabase
 npx prisma db push
 
 # Jalankan seeder database (idempotent, password bcrypt terenkripsi, tanggal dinamis)
