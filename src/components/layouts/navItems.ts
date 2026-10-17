@@ -18,6 +18,7 @@ export interface NavItem {
   href: string;
   icon: LucideIcon;
   description?: string;
+  ownerOnly?: boolean;
 }
 
 export const ownerNavItems: NavItem[] = [
@@ -29,7 +30,7 @@ export const ownerNavItems: NavItem[] = [
   { label: 'Verifikasi Bayar', href: '/owner/verifikasi', icon: CheckCircle2, description: 'Tinjau bukti transfer pembayaran' },
   { label: 'Laporan Keuangan', href: '/owner/laporan', icon: BarChart3, description: 'Kas lunas, piutang, & export Excel' },
   { label: 'Pengaduan', href: '/owner/pengaduan', icon: MessageSquareWarning, description: 'Keluhan kerusakan fasilitas kamar' },
-  { label: 'Kelola User', href: '/owner/users', icon: UserCog, description: 'Akun pengelola Owner & Admin' },
-  { label: 'Pengaturan', href: '/owner/pengaturan', icon: Settings, description: 'Harga default, denda, & template WA' },
-  { label: 'Log Aktivitas', href: '/owner/log', icon: History, description: 'Audit trail riwayat aksi sistem' },
+  { label: 'Kelola User', href: '/owner/users', icon: UserCog, description: 'Akun pengelola Owner & Admin', ownerOnly: true },
+  { label: 'Pengaturan', href: '/owner/pengaturan', icon: Settings, description: 'Harga default, denda, & template WA', ownerOnly: true },
+  { label: 'Log Aktivitas', href: '/owner/log', icon: History, description: 'Audit trail riwayat aksi sistem', ownerOnly: true },
 ];

@@ -70,7 +70,7 @@ const createKamarSchema = z.object({
   lantai: z.coerce.number().int().optional().nullable(),
   harga_sewa: z.coerce.number().positive('Harga sewa harus lebih dari 0'),
   fasilitas: z.string().optional().default(''),
-  status: z.nativeEnum(StatusKamar).optional().default(StatusKamar.KOSONG),
+  status: z.enum(StatusKamar).optional().default(StatusKamar.KOSONG),
   foto_url: z.string().optional().nullable(),
 });
 
@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
 
     const parseResult = createKamarSchema.safeParse(body);
     if (!parseResult.success) {
-      const errorMsg = parseResult.error.errors.map((e) => e.message).join(', ');
+      const errorMsg = parseResult.error.issues.map((e) => e.message).join(', ');
       return NextResponse.json({ error: errorMsg }, { status: 400 });
     }
 
@@ -119,7 +119,7 @@ const updateKamarSchema = z.object({
   lantai: z.coerce.number().int().optional().nullable(),
   harga_sewa: z.coerce.number().positive().optional(),
   fasilitas: z.string().optional(),
-  status: z.nativeEnum(StatusKamar).optional(),
+  status: z.enum(StatusKamar).optional(),
   foto_url: z.string().optional().nullable(),
 });
 
@@ -130,7 +130,7 @@ export async function PUT(req: NextRequest) {
 
     const parseResult = updateKamarSchema.safeParse(body);
     if (!parseResult.success) {
-      const errorMsg = parseResult.error.errors.map((e) => e.message).join(', ');
+      const errorMsg = parseResult.error.issues.map((e) => e.message).join(', ');
       return NextResponse.json({ error: errorMsg }, { status: 400 });
     }
 

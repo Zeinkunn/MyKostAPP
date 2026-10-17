@@ -18,12 +18,23 @@ const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID || '';
 const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY || '';
 const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME || 'mykost-storage';
 
-export const isR2Configured = Boolean(
-  R2_ACCOUNT_ID &&
-  R2_ACCOUNT_ID !== 'mock-account-id' &&
-  R2_ACCESS_KEY_ID &&
-  R2_SECRET_ACCESS_KEY
-);
+export function checkIsR2Configured(
+  accountId = R2_ACCOUNT_ID,
+  accessKeyId = R2_ACCESS_KEY_ID,
+  secretAccessKey = R2_SECRET_ACCESS_KEY
+): boolean {
+  return Boolean(
+    accountId &&
+      accountId !== 'mock-account-id' &&
+      accountId !== 'your-cloudflare-account-id' &&
+      accessKeyId &&
+      accessKeyId !== 'your-r2-access-key-id' &&
+      secretAccessKey &&
+      secretAccessKey !== 'your-r2-secret-access-key'
+  );
+}
+
+export const isR2Configured = checkIsR2Configured();
 
 export const s3Client = isR2Configured
   ? new S3Client({

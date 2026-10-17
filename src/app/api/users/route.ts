@@ -28,12 +28,10 @@ export async function GET() {
 
 const createUserSchema = z.object({
   nama: z.string().trim().min(1, 'Nama wajib diisi'),
-  email: z.string().trim().email('Format email tidak valid'),
+  email: z.string().trim().toLowerCase().email('Format email tidak valid'),
   password: z.string().min(8, 'Password minimal 8 karakter'),
   role: z.enum([Role.OWNER, Role.ADMIN], {
-    errorMap: () => ({
-      message: 'Role tidak valid. Hanya OWNER atau ADMIN yang dapat dibuat lewat endpoint ini.',
-    }),
+    message: 'Role tidak valid. Hanya OWNER atau ADMIN yang dapat dibuat lewat endpoint ini.',
   }),
 });
 
@@ -44,7 +42,7 @@ export async function POST(req: NextRequest) {
 
     const parseResult = createUserSchema.safeParse(body);
     if (!parseResult.success) {
-      const errorMsg = parseResult.error.errors.map((e) => e.message).join(', ');
+      const errorMsg = parseResult.error.issues.map((e) => e.message).join(', ');
       return NextResponse.json({ error: errorMsg }, { status: 400 });
     }
 
@@ -80,7 +78,7 @@ export async function POST(req: NextRequest) {
 
 const updateProfileSchema = z.object({
   nama: z.string().trim().min(1, 'Nama wajib diisi'),
-  email: z.string().trim().email('Format email tidak valid'),
+  email: z.string().trim().toLowerCase().email('Format email tidak valid'),
   no_hp: z.string().trim().optional().nullable(),
 });
 
@@ -92,7 +90,7 @@ export async function PUT(req: NextRequest) {
 
     const parseResult = updateProfileSchema.safeParse(body);
     if (!parseResult.success) {
-      const errorMsg = parseResult.error.errors.map((e) => e.message).join(', ');
+      const errorMsg = parseResult.error.issues.map((e) => e.message).join(', ');
       return NextResponse.json({ error: errorMsg }, { status: 400 });
     }
 
@@ -171,7 +169,7 @@ export async function PATCH(req: NextRequest) {
 
     const parseResult = resetAdminPasswordSchema.safeParse(body);
     if (!parseResult.success) {
-      const errorMsg = parseResult.error.errors.map((e) => e.message).join(', ');
+      const errorMsg = parseResult.error.issues.map((e) => e.message).join(', ');
       return NextResponse.json({ error: errorMsg }, { status: 400 });
     }
 

@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const parseResult = loginSchema.safeParse(body);
     if (!parseResult.success) {
-      const errorMsg = parseResult.error.errors.map((e) => e.message).join(', ');
+      const errorMsg = parseResult.error.issues.map((e) => e.message).join(', ');
       return NextResponse.json({ error: errorMsg }, { status: 400 });
     }
 

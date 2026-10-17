@@ -8,7 +8,7 @@ export function handleApiError(error: unknown, fallbackMessage = 'Terjadi kesala
   }
 
   if (error instanceof ZodError) {
-    const message = error.errors.map((e) => e.message).join(', ');
+    const message = error.issues.map((e) => e.message).join(', ');
     return NextResponse.json({ error: message }, { status: 400 });
   }
 

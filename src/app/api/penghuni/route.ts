@@ -37,7 +37,7 @@ const createPenghuniSchema = z.object({
   nama: z.string().trim().min(1, 'Nama penghuni wajib diisi'),
   no_ktp: z.string().trim().min(1, 'Nomor KTP wajib diisi'),
   no_hp: z.string().trim().min(8, 'Nomor HP minimal 8 digit'),
-  email: z.string().trim().email('Format email tidak valid'),
+  email: z.string().trim().toLowerCase().email('Format email tidak valid'),
   foto_ktp_url: z.string().optional().nullable(),
 });
 
@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
 
     const parseResult = createPenghuniSchema.safeParse(body);
     if (!parseResult.success) {
-      const errorMsg = parseResult.error.errors.map((e) => e.message).join(', ');
+      const errorMsg = parseResult.error.issues.map((e) => e.message).join(', ');
       return NextResponse.json({ error: errorMsg }, { status: 400 });
     }
 

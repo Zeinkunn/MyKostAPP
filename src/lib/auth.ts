@@ -1,6 +1,7 @@
 import { SignJWT, jwtVerify } from 'jose';
 import bcrypt from 'bcryptjs';
 import { cookies } from 'next/headers';
+import { cache } from 'react';
 import { Role } from '@prisma/client';
 import { prisma } from './prisma';
 
@@ -73,7 +74,7 @@ export async function clearSessionCookie() {
   cookieStore.delete(COOKIE_NAME);
 }
 
-export async function getCurrentSession(): Promise<UserSessionPayload | null> {
+export const getCurrentSession = cache(async (): Promise<UserSessionPayload | null> => {
   const cookieStore = await cookies();
   const token = cookieStore.get(COOKIE_NAME)?.value;
   if (!token) return null;
@@ -98,4 +99,4 @@ export async function getCurrentSession(): Promise<UserSessionPayload | null> {
   }
 
   return session;
-}
+});

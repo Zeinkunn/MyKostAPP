@@ -9,7 +9,7 @@ import { Prisma } from '@prisma/client';
 
 const registerSchema = z.object({
   nama: z.string().trim().min(1, 'Nama lengkap wajib diisi'),
-  email: z.string().trim().email('Format email tidak valid'),
+  email: z.string().trim().toLowerCase().email('Format email tidak valid'),
   no_hp: z.string().trim().min(8, 'Nomor HP minimal 8 digit'),
   password: z.string().min(8, 'Password minimal 8 karakter'),
   token: z.string().trim().min(1, 'Token aktivasi wajib disertakan'),
@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const parseResult = registerSchema.safeParse(body);
     if (!parseResult.success) {
-      const errorMsg = parseResult.error.errors.map((e) => e.message).join(', ');
+      const errorMsg = parseResult.error.issues.map((e) => e.message).join(', ');
       return NextResponse.json({ error: errorMsg }, { status: 400 });
     }
 

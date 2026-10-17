@@ -228,35 +228,37 @@ export default async function OwnerProfilPage() {
             <ChevronRight className="w-5 h-5 text-slate-400 shrink-0 ml-2" />
           </Link>
 
-          {/* Rekening Bank Pencairan (Tahap B) */}
-          <Link
-            href="/owner/pengaturan#rekening"
-            className="flex items-center justify-between p-3.5 hover:bg-slate-50 active:bg-slate-100/60 transition-colors min-h-[44px] group"
-          >
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 shrink-0 group-hover:scale-105 transition-transform">
-                <CreditCard className="w-5 h-5" />
-              </div>
-              <div className="min-w-0 text-left">
-                <div className="flex items-center gap-1.5">
-                  <p className="text-sm font-semibold text-slate-900 truncate">
-                    Rekening Bank Pencairan
-                  </p>
-                  {pengaturan?.bank_nama && (
-                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800 shrink-0">
-                      {pengaturan.bank_nama}
-                    </span>
-                  )}
+          {/* Rekening Bank Pencairan (Tahap B - OWNER ONLY) */}
+          {isOwner && (
+            <Link
+              href="/owner/pengaturan#rekening"
+              className="flex items-center justify-between p-3.5 hover:bg-slate-50 active:bg-slate-100/60 transition-colors min-h-[44px] group"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 shrink-0 group-hover:scale-105 transition-transform">
+                  <CreditCard className="w-5 h-5" />
                 </div>
-                <p className="text-xs text-slate-400 truncate">
-                  {pengaturan?.bank_no_rekening
-                    ? `${pengaturan.bank_atas_nama || 'Rekening Kost'} • •••• ${pengaturan.bank_no_rekening.slice(-4)}`
-                    : 'Belum diatur'}
-                </p>
+                <div className="min-w-0 text-left">
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-sm font-semibold text-slate-900 truncate">
+                      Rekening Bank Pencairan
+                    </p>
+                    {pengaturan?.bank_nama && (
+                      <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800 shrink-0">
+                        {pengaturan.bank_nama}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-slate-400 truncate">
+                    {pengaturan?.bank_no_rekening
+                      ? `${pengaturan.bank_atas_nama || 'Rekening Kost'} • •••• ${pengaturan.bank_no_rekening.slice(-4)}`
+                      : 'Belum diatur'}
+                  </p>
+                </div>
               </div>
-            </div>
-            <ChevronRight className="w-5 h-5 text-slate-400 shrink-0 ml-2" />
-          </Link>
+              <ChevronRight className="w-5 h-5 text-slate-400 shrink-0 ml-2" />
+            </Link>
+          )}
 
           {/* Notifikasi Sistem */}
           <Link
@@ -282,26 +284,28 @@ export default async function OwnerProfilPage() {
             </div>
           </Link>
 
-          {/* Pengaturan Denda & Template WA */}
-          <Link
-            href="/owner/pengaturan"
-            className="flex items-center justify-between p-3.5 hover:bg-slate-50 active:bg-slate-100/60 transition-colors min-h-[44px] group"
-          >
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 shrink-0 group-hover:scale-105 transition-transform">
-                <SlidersHorizontal className="w-5 h-5" />
+          {/* Pengaturan Denda & Template WA (OWNER ONLY) */}
+          {isOwner && (
+            <Link
+              href="/owner/pengaturan"
+              className="flex items-center justify-between p-3.5 hover:bg-slate-50 active:bg-slate-100/60 transition-colors min-h-[44px] group"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 shrink-0 group-hover:scale-105 transition-transform">
+                  <SlidersHorizontal className="w-5 h-5" />
+                </div>
+                <div className="min-w-0 text-left">
+                  <p className="text-sm font-semibold text-slate-900 truncate">
+                    Pengaturan Denda &amp; Template WA
+                  </p>
+                  <p className="text-xs text-slate-400 truncate">
+                    Aturan denda sewa &amp; otomatisasi pesan
+                  </p>
+                </div>
               </div>
-              <div className="min-w-0 text-left">
-                <p className="text-sm font-semibold text-slate-900 truncate">
-                  Pengaturan Denda &amp; Template WA
-                </p>
-                <p className="text-xs text-slate-400 truncate">
-                  Aturan denda sewa &amp; otomatisasi pesan
-                </p>
-              </div>
-            </div>
-            <ChevronRight className="w-5 h-5 text-slate-400 shrink-0 ml-2" />
-          </Link>
+              <ChevronRight className="w-5 h-5 text-slate-400 shrink-0 ml-2" />
+            </Link>
+          )}
 
           {/* Kelola User & Peran (OWNER ONLY) */}
           {isOwner && (

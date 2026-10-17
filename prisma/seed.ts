@@ -1,13 +1,11 @@
 import { PrismaClient, Role, StatusKamar, StatusKontrak, StatusTagihan, DendaMode } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
 import bcrypt from 'bcryptjs';
 
-const prisma = new PrismaClient({
-  datasources: {
-    db: {
-      url: process.env.DIRECT_URL || process.env.DATABASE_URL,
-    },
-  },
+const adapter = new PrismaPg({
+  connectionString: process.env.DIRECT_URL || process.env.DATABASE_URL || '',
 });
+const prisma = new PrismaClient({ adapter });
 
 
 async function main() {

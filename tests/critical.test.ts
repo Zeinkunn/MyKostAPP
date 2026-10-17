@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { normalizePhone } from '@/lib/phone';
 import { hitungDenda } from '@/lib/denda';
 import { hashToken } from '@/lib/token';
-import { detectImageFromBytes } from '@/lib/r2';
+import { detectImageFromBytes, checkIsR2Configured } from '@/lib/r2';
 import { canAccessFile } from '@/lib/file-auth';
 import { checkPerpanjanganEligibility, PerpanjanganError } from '@/lib/perpanjangan';
 import { tambahBulan } from '@/lib/date-utils';
@@ -427,5 +427,29 @@ describe('8. Keamanan Balapan & Transaksi Konkurensi Perpanjangan Sewa', () => {
       statusCode: 409,
     });
     expect(attempts).toBe(3); // Attempt 0, attempt 1, attempt 2 (total 3 attempts)
+  });
+});
+
+describe('9. Deteksi Konfigurasi Cloudflare R2 & Penolakan Placeholder (checkIsR2Configured)', () => {
+  it('harus mengembalikan false jika variabel R2 berisi nilai placeholder dari .env.example', () => {
+    expect(
+      checkIsR2Configured(
+        'your-cloudflare-account-id',
+        'your-r2-access-key-id',
+        'your-r2-secret-access-key'
+      )
+    ).toBe(false);
+    expect(checkIsR2Configured('mock-account-id', 'key', 'secret')).toBe(false);
+    expect(checkIsR2Configured('', 'key', 'secret')).toBe(false);
+  });
+
+  it('harus mengembalikan true jika kredensial R2 valid diberikan', () => {
+    expect(
+      checkIsR2Configured(
+        '8f9e2a1b3c4d5e6f7a8b9c0d1e2f3a4b',
+        'real-access-key-id',
+        'real-secret-access-key'
+      )
+    ).toBe(true);
   });
 });

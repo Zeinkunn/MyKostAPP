@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
     const parseResult = resetPasswordSchema.safeParse(body);
     if (!parseResult.success) {
       return NextResponse.json(
-        { error: parseResult.error.errors[0]?.message || 'Input tidak valid' },
+        { error: parseResult.error.issues[0]?.message || 'Input tidak valid' },
         { status: 400 }
       );
     }

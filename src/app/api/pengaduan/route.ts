@@ -139,8 +139,8 @@ export async function POST(req: NextRequest) {
 
 const updatePengaduanSchema = z.object({
   id: z.string().min(1, 'ID komplain wajib disertakan'),
-  status: z.nativeEnum(StatusPengaduan, {
-    errorMap: () => ({ message: 'Status komplain tidak valid' }),
+  status: z.enum(StatusPengaduan, {
+    message: 'Status komplain tidak valid',
   }),
   catatan_internal: z.string().optional().nullable(),
 });
@@ -153,7 +153,7 @@ export async function PUT(req: NextRequest) {
 
     const parseResult = updatePengaduanSchema.safeParse(body);
     if (!parseResult.success) {
-      const errorMsg = parseResult.error.errors.map((e) => e.message).join(', ');
+      const errorMsg = parseResult.error.issues.map((e) => e.message).join(', ');
       return NextResponse.json({ error: errorMsg }, { status: 400 });
     }
 

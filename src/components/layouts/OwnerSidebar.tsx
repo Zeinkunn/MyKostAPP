@@ -6,8 +6,9 @@ import { cn } from '@/lib/utils';
 import { ownerNavItems } from './navItems';
 import LogoutButton from '@/components/LogoutButton';
 
-export default function OwnerSidebar() {
+export default function OwnerSidebar({ role = 'OWNER' }: { role?: string }) {
   const pathname = usePathname();
+  const visibleNavItems = ownerNavItems.filter((item) => !item.ownerOnly || role === 'OWNER');
 
   return (
     <aside className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0 bg-white border-r border-slate-200 z-30">
@@ -22,7 +23,7 @@ export default function OwnerSidebar() {
       </div>
 
       <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-        {ownerNavItems.map((item) => {
+        {visibleNavItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
           return (

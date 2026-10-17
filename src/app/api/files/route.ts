@@ -16,14 +16,16 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Parameter key wajib disertakan' }, { status: 400 });
     }
 
-    // Fallback: If legacy full URL is passed, redirect directly
-    if (key.startsWith('http://') || key.startsWith('https://') || key.startsWith('/uploads/')) {
-      return NextResponse.redirect(key);
+    // Reject external URLs to prevent open redirect vulnerabilities
+    if (key.startsWith('http://') || key.startsWith('https://') || key.startsWith('//')) {
+      return NextResponse.json({ error: 'Format key file tidak valid' }, { status: 400 });
     }
 
+    const rawKey = key.startsWith('/uploads/') ? key.slice('/uploads/'.length) : key;
+
     // Prevent path traversal
-    const sanitizedKey = path.basename(key);
-    if (!sanitizedKey || sanitizedKey !== key) {
+    const sanitizedKey = path.basename(rawKey);
+    if (!sanitizedKey || sanitizedKey !== rawKey) {
       return NextResponse.json({ error: 'Format key file tidak valid' }, { status: 400 });
     }
 
@@ -31,11 +33,11 @@ export async function GET(req: NextRequest) {
     if (session.role === Role.PENGHUNI) {
       // 1. Check if it's tenant's own profile avatar
       const ownUser = await prisma.user.findFirst({
-        where: { id: session.id, foto_url: key },
+        where: { id: session.id, foto_url: sanitizedKey },
         select: { id: true, foto_url: true },
       });
 
-      let isAuthorized = canAccessFile(session.role, session.id, key, {
+      let isAuthorized = canAccessFile(session.role, session.id, sanitizedKey, {
         userFotoUrl: ownUser?.foto_url,
       });
 
@@ -43,7 +45,7 @@ export async function GET(req: NextRequest) {
       if (!isAuthorized) {
         const payment = await prisma.pembayaran.findFirst({
           where: {
-            bukti_url: key,
+            bukti_url: sanitizedKey,
             tagihan: {
               kontrak: {
                 penghuni: {
@@ -69,7 +71,7 @@ export async function GET(req: NextRequest) {
 
         const paymentUserId = payment?.tagihan?.kontrak?.penghuni?.user_id;
         if (paymentUserId) {
-          isAuthorized = canAccessFile(session.role, session.id, key, {
+          isAuthorized = canAccessFile(session.role, session.id, sanitizedKey, {
             paymentUserIds: [paymentUserId],
           });
         }
@@ -88,13 +90,13 @@ export async function GET(req: NextRequest) {
 
         const hasComplaintPhoto = complaints.some((c) => {
           if (Array.isArray(c.foto_url)) {
-            return (c.foto_url as string[]).includes(key);
+            return (c.foto_url as string[]).includes(sanitizedKey);
           }
           return false;
         });
 
         if (hasComplaintPhoto) {
-          isAuthorized = canAccessFile(session.role, session.id, key, {
+          isAuthorized = canAccessFile(session.role, session.id, sanitizedKey, {
             complaintUserIds: [session.id],
           });
         }
@@ -103,11 +105,11 @@ export async function GET(req: NextRequest) {
       // 4. Check if it's a general room photo (accessible by all tenants)
       if (!isAuthorized) {
         const roomPhoto = await prisma.kamar.findFirst({
-          where: { foto_url: key },
+          where: { foto_url: sanitizedKey },
           select: { id: true },
         });
         if (roomPhoto) {
-          isAuthorized = canAccessFile(session.role, session.id, key, {
+          isAuthorized = canAccessFile(session.role, session.id, sanitizedKey, {
             isRoomPhoto: true,
           });
         }
@@ -123,12 +125,12 @@ export async function GET(req: NextRequest) {
 
     // Authorized (OWNER, ADMIN, or authorized PENGHUNI)
     if (s3Client) {
-      const signedUrl = await getFileSignedUrl(key, 900); // 15 minutes validity
+      const signedUrl = await getFileSignedUrl(sanitizedKey, 900); // 15 minutes validity
       return NextResponse.redirect(signedUrl, 302);
     }
 
     // Local dev fallback
-    return NextResponse.redirect(new URL(`/uploads/${key}`, req.url));
+    return NextResponse.redirect(new URL(`/uploads/${sanitizedKey}`, req.url));
   } catch (error: any) {
     return handleApiError(error, 'Gagal memproses permintaan berkas');
   }

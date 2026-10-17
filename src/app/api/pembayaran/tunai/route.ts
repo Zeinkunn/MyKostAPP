@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
     const parseResult = cashPaymentSchema.safeParse(body);
     if (!parseResult.success) {
       return NextResponse.json(
-        { error: parseResult.error.errors[0]?.message || 'Input tidak valid' },
+        { error: parseResult.error.issues[0]?.message || 'Input tidak valid' },
         { status: 400 }
       );
     }
@@ -53,8 +53,20 @@ export async function POST(req: NextRequest) {
     const totalBayar = Number(tagihan.jumlah) + Number(tagihan.denda);
     const now = new Date();
 
-    // Atomic transaction: create verified cash payment and set bill to LUNAS
+    // Atomic transaction: reject any pending transfer proofs, create verified cash payment, and set bill to LUNAS
     const result = await prisma.$transaction(async (tx) => {
+      await tx.pembayaran.updateMany({
+        where: {
+          tagihan_id: tagihan.id,
+          status_verifikasi: StatusVerifikasi.PENDING,
+        },
+        data: {
+          status_verifikasi: StatusVerifikasi.DITOLAK,
+          diverifikasi_oleh: session.id,
+          diverifikasi_at: now,
+        },
+      });
+
       const pembayaran = await tx.pembayaran.create({
         data: {
           tagihan_id: tagihan.id,

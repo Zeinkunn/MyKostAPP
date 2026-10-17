@@ -8,7 +8,7 @@ import { z } from 'zod';
 
 export async function GET() {
   try {
-    await requireAuthApi();
+    const session = await requireAuthApi();
     let settings = await prisma.pengaturan.findUnique({
       where: { id: 'default' },
     });
@@ -24,6 +24,15 @@ export async function GET() {
           wa_template:
             'Halo Sdr/i {NAMA},\n\nTagihan sewa kamar {KAMAR} periode {PERIODE} sebesar {JUMLAH} akan jatuh tempo pada {JATUH_TEMPO}.\n\nMohon lakukan pembayaran via aplikasi MyKost. Terima kasih!',
         },
+      });
+    }
+
+    if (session.role === Role.PENGHUNI) {
+      return NextResponse.json({
+        bank_nama: settings.bank_nama,
+        bank_no_rekening: settings.bank_no_rekening,
+        bank_atas_nama: settings.bank_atas_nama,
+        kontak_pengelola_wa: settings.kontak_pengelola_wa,
       });
     }
 
@@ -47,12 +56,12 @@ const updatePengaturanSchema = z.object({
 
 export async function PUT(req: NextRequest) {
   try {
-    const session = await requireRoleApi([Role.OWNER, Role.ADMIN]);
+    const session = await requireRoleApi([Role.OWNER]);
     const body = await req.json();
 
     const parseResult = updatePengaturanSchema.safeParse(body);
     if (!parseResult.success) {
-      const errorMsg = parseResult.error.errors.map((e) => e.message).join(', ');
+      const errorMsg = parseResult.error.issues.map((e) => e.message).join(', ');
       return NextResponse.json({ error: errorMsg }, { status: 400 });
     }
 

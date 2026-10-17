@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Camera, Send, CheckCircle2, Image as ImageIcon } from 'lucide-react';
+import { ArrowLeft, Camera, Send, CheckCircle2, Image as ImageIcon, X } from 'lucide-react';
 import imageCompression from 'browser-image-compression';
 
 export default function AjukanKomplainBaruPage() {
@@ -12,31 +12,55 @@ export default function AjukanKomplainBaruPage() {
 
   const [kategori, setKategori] = useState('AC / Pendingin Ruangan');
   const [deskripsi, setDeskripsi] = useState('');
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [compressing, setCompressing] = useState(false);
   const [success, setSuccess] = useState(false);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setCompressing(true);
-      try {
-        const compressedFile = await imageCompression(file, {
-          maxSizeMB: 0.8,
-          maxWidthOrHeight: 1200,
-          useWebWorker: true,
-        });
-        setSelectedFile(compressedFile);
-        setPreviewUrl(URL.createObjectURL(compressedFile));
-      } catch (err) {
-        setSelectedFile(file);
-        setPreviewUrl(URL.createObjectURL(file));
-      } finally {
-        setCompressing(false);
-      }
+    if (!e.target.files || e.target.files.length === 0) return;
+
+    const incomingFiles = Array.from(e.target.files);
+    const remainingSlots = 3 - selectedFiles.length;
+    if (remainingSlots <= 0) {
+      alert('Maksimal 3 foto yang dapat dilampirkan.');
+      e.target.value = '';
+      return;
     }
+
+    const filesToProcess = incomingFiles.slice(0, remainingSlots);
+    setCompressing(true);
+    try {
+      const processedFiles: File[] = [];
+      const newPreviews: string[] = [];
+
+      for (const file of filesToProcess) {
+        try {
+          const compressedFile = await imageCompression(file, {
+            maxSizeMB: 0.8,
+            maxWidthOrHeight: 1200,
+            useWebWorker: true,
+          });
+          processedFiles.push(compressedFile);
+          newPreviews.push(URL.createObjectURL(compressedFile));
+        } catch {
+          processedFiles.push(file);
+          newPreviews.push(URL.createObjectURL(file));
+        }
+      }
+
+      setSelectedFiles((prev) => [...prev, ...processedFiles]);
+      setPreviewUrls((prev) => [...prev, ...newPreviews]);
+    } finally {
+      setCompressing(false);
+      e.target.value = '';
+    }
+  };
+
+  const handleRemoveFile = (index: number) => {
+    setSelectedFiles((prev) => prev.filter((_, idx) => idx !== index));
+    setPreviewUrls((prev) => prev.filter((_, idx) => idx !== index));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -51,8 +75,8 @@ export default function AjukanKomplainBaruPage() {
       const formData = new FormData();
       formData.append('kategori', kategori);
       formData.append('deskripsi', deskripsi.trim());
-      if (selectedFile) {
-        formData.append('foto', selectedFile);
+      for (const file of selectedFiles) {
+        formData.append('foto', file);
       }
 
       const res = await fetch('/api/pengaduan', {
@@ -147,33 +171,54 @@ export default function AjukanKomplainBaruPage() {
               ref={galleryInputRef}
               type="file"
               accept="image/*"
+              multiple
               onChange={handleFileChange}
               className="hidden"
             />
 
             <div>
-              <label className="font-semibold text-slate-700">Lampirkan Foto Masalah (Opsional)</label>
+              <div className="flex items-center justify-between">
+                <label className="font-semibold text-slate-700">
+                  Lampirkan Foto Masalah (Opsional, Maks. 3 Foto)
+                </label>
+                <span className="text-[11px] text-slate-400 font-medium">
+                  {selectedFiles.length}/3 foto
+                </span>
+              </div>
 
-              {previewUrl ? (
-                <div className="border-2 border-dashed border-blue-300 rounded-2xl p-4 text-center bg-blue-50/40 space-y-2 mt-1">
-                  <img
-                    src={previewUrl}
-                    alt="Preview Kerusakan"
-                    className="max-h-48 mx-auto rounded-xl object-contain shadow-sm"
-                  />
-                  <p className="text-[11px] text-blue-700 font-semibold">
-                    {compressing ? 'Mengompresi foto...' : 'Foto terlampir'}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => galleryInputRef.current?.click()}
-                    className="text-xs text-blue-600 font-semibold hover:underline"
-                  >
-                    Ganti Foto / Screenshot Lain
-                  </button>
+              {previewUrls.length > 0 && (
+                <div className="grid grid-cols-3 gap-2.5 mt-2">
+                  {previewUrls.map((url, idx) => (
+                    <div
+                      key={idx}
+                      className="relative rounded-xl overflow-hidden border border-slate-200 bg-slate-50 aspect-square"
+                    >
+                      <img
+                        src={url}
+                        alt={`Preview Kerusakan ${idx + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveFile(idx)}
+                        className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-slate-900/75 text-white flex items-center justify-center hover:bg-rose-600 transition-colors"
+                        aria-label="Hapus foto"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
                 </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-3 mt-1">
+              )}
+
+              {compressing && (
+                <p className="text-[11px] text-blue-600 font-semibold mt-2">
+                  Mengompresi foto...
+                </p>
+              )}
+
+              {selectedFiles.length < 3 && (
+                <div className="grid grid-cols-2 gap-3 mt-2">
                   <button
                     type="button"
                     onClick={() => cameraInputRef.current?.click()}
@@ -195,7 +240,7 @@ export default function AjukanKomplainBaruPage() {
                       <ImageIcon className="w-4 h-4" />
                     </div>
                     <p className="font-bold text-slate-800">Galeri / Screenshot</p>
-                    <p className="text-[10px] text-slate-400">Pilih dari HP</p>
+                    <p className="text-[10px] text-slate-400">Pilih hingga {3 - selectedFiles.length} foto</p>
                   </button>
                 </div>
               )}

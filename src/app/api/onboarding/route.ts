@@ -5,6 +5,7 @@ import { Role, StatusKamar, StatusKontrak, StatusTagihan } from '@prisma/client'
 import { normalizePhone } from '@/lib/phone';
 import { sendWhatsAppMessage } from '@/lib/fonnte';
 import { logAktivitas } from '@/lib/log';
+import { handleApiError } from '@/lib/errors';
 import { z } from 'zod';
 
 const onboardingSchema = z
@@ -12,7 +13,7 @@ const onboardingSchema = z
     nama: z.string().trim().min(1, 'Nama wajib diisi'),
     no_ktp: z.string().trim().min(1, 'Nomor KTP wajib diisi'),
     no_hp: z.string().trim().min(8, 'Nomor HP minimal 8 digit'),
-    email: z.string().trim().email('Format email tidak valid'),
+    email: z.string().trim().toLowerCase().email('Format email tidak valid'),
     kamar_id: z.string().min(1, 'Kamar wajib dipilih'),
     tanggal_mulai: z.string().refine((val) => !isNaN(Date.parse(val)), 'Tanggal mulai tidak valid'),
     tanggal_selesai: z.string().refine((val) => !isNaN(Date.parse(val)), 'Tanggal selesai tidak valid'),
@@ -32,7 +33,7 @@ export async function POST(req: NextRequest) {
 
     const parseResult = onboardingSchema.safeParse(body);
     if (!parseResult.success) {
-      const errorMsg = parseResult.error.errors.map((e) => e.message).join(', ');
+      const errorMsg = parseResult.error.issues.map((e) => e.message).join(', ');
       return NextResponse.json({ error: errorMsg }, { status: 400 });
     }
 
@@ -172,7 +173,8 @@ export async function POST(req: NextRequest) {
     if (!result.penghuni.user_id) {
       const { createAktivasiToken } = await import('@/lib/token');
       const aktivasiToken = await createAktivasiToken(result.penghuni.id, 'AKTIVASI', 7);
-      activationLinkMsg = `\n\nSilakan klik tautan berikut untuk aktivasi akun & mengatur kata sandi Anda:\n/login?aktivasi=${aktivasiToken}\n*(Tautan berlaku selama 7 hari)*`;
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || req.nextUrl.origin || 'http://localhost:3000';
+      activationLinkMsg = `\n\nSilakan klik tautan berikut untuk aktivasi akun & mengatur kata sandi Anda:\n${appUrl}/login?aktivasi=${aktivasiToken}\n*(Tautan berlaku selama 7 hari)*`;
     }
 
     const waMessage = `Halo Sdr/i ${namaPenghuni},\n\nKontrak sewa Anda untuk *Kamar ${nomorKamar}* telah aktif!${activationLinkMsg}\n\nTerima kasih,\nPengelola MyKost`;
@@ -214,15 +216,10 @@ export async function POST(req: NextRequest) {
       error.message?.includes('sedang tidak tersedia') ||
       error.message?.includes('masih memiliki kontrak sewa AKTIF');
 
-
     if (isClientError) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
-    console.error('Onboarding error:', error);
-    return NextResponse.json(
-      { error: error.message || 'Gagal memproses onboarding penghuni' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'Gagal memproses onboarding penghuni');
   }
 }

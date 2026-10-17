@@ -92,7 +92,7 @@ export async function PATCH(req: NextRequest) {
 
     const parseResult = penyesuaianSchema.safeParse(body);
     if (!parseResult.success) {
-      const errorMsg = parseResult.error.errors.map((e) => e.message).join(', ');
+      const errorMsg = parseResult.error.issues.map((e) => e.message).join(', ');
       return NextResponse.json({ error: errorMsg }, { status: 400 });
     }
 
@@ -145,7 +145,7 @@ export async function PATCH(req: NextRequest) {
     await logAktivitas(
       session.id,
       'sesuaikan_tagihan',
-      `Penyesuaian tagihan Kamar ${tagihan.kontrak.kamar.nomor_kamar} (${tagihan.kontrak.penghuni.nama}) periode ${tagihan.periode}. Sebelum: [Pokok: ${formatRupiah(oldJumlah)}, Denda: ${formatRupiah(oldDenda)}]. Sesudah: [Pokok: ${formatRupiah(newJumlah)}, Denda: ${formatRupiah(newDenda)}]. Alasan: ${alasan}`
+      `[TAGIHAN_ID:${tagihan.id}] Penyesuaian tagihan Kamar ${tagihan.kontrak.kamar.nomor_kamar} (${tagihan.kontrak.penghuni.nama}) periode ${tagihan.periode}. Sebelum: [Pokok: ${formatRupiah(oldJumlah)}, Denda: ${formatRupiah(oldDenda)}]. Sesudah: [Pokok: ${formatRupiah(newJumlah)}, Denda: ${formatRupiah(newDenda)}]. Alasan: ${alasan}`
     );
 
     return NextResponse.json({

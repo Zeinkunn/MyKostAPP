@@ -4,6 +4,8 @@ import { ApiAuthError, requireRoleApi } from '@/lib/rbac';
 import { Role, StatusKamar, StatusKontrak, StatusTagihan } from '@prisma/client';
 import { sendWhatsAppMessage } from '@/lib/fonnte';
 import { logAktivitas } from '@/lib/log';
+import { handleApiError } from '@/lib/errors';
+import { z } from 'zod';
 
 export async function GET() {
   try {
@@ -19,14 +21,9 @@ export async function GET() {
 
     return NextResponse.json(listKontrak);
   } catch (error: any) {
-    if (error instanceof ApiAuthError) {
-      return NextResponse.json({ error: error.message }, { status: error.status });
-    }
-    return NextResponse.json({ error: error.message || 'Unauthorized' }, { status: 401 });
+    return handleApiError(error, 'Gagal mengambil daftar kontrak sewa');
   }
 }
-
-import { z } from 'zod';
 
 const createKontrakSchema = z
   .object({
@@ -50,7 +47,7 @@ export async function POST(req: NextRequest) {
 
     const parseResult = createKontrakSchema.safeParse(body);
     if (!parseResult.success) {
-      const errorMsg = parseResult.error.errors.map((e) => e.message).join(', ');
+      const errorMsg = parseResult.error.issues.map((e) => e.message).join(', ');
       return NextResponse.json({ error: errorMsg }, { status: 400 });
     }
 
@@ -167,7 +164,8 @@ export async function POST(req: NextRequest) {
     if (!result.kontrak.penghuni.user_id) {
       const { createAktivasiToken } = await import('@/lib/token');
       const aktivasiToken = await createAktivasiToken(result.kontrak.penghuni.id, 'AKTIVASI', 7);
-      activationLinkMsg = `\n\nSilakan klik tautan berikut untuk aktivasi akun & mengatur kata sandi Anda:\n/login?aktivasi=${aktivasiToken}\n*(Tautan berlaku selama 7 hari)*`;
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || req.nextUrl.origin || 'http://localhost:3000';
+      activationLinkMsg = `\n\nSilakan klik tautan berikut untuk aktivasi akun & mengatur kata sandi Anda:\n${appUrl}/login?aktivasi=${aktivasiToken}\n*(Tautan berlaku selama 7 hari)*`;
     }
 
     const waMessage = `Halo Sdr/i ${namaPenghuni},\n\nKontrak sewa Anda untuk *Kamar ${nomorKamar}* telah aktif!${activationLinkMsg}\n\nTerima kasih,\nPengelola MyKost`;
@@ -196,7 +194,6 @@ export async function POST(req: NextRequest) {
       );
     }
     const isValidationError =
-
       error.message?.includes('Kamar ini sedang tidak tersedia') ||
       error.message?.includes('sedang tidak tersedia') ||
       error.message?.includes('Kamar tidak ditemukan') ||
@@ -207,7 +204,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
-    console.error('Create kontrak error:', error);
-    return NextResponse.json({ error: error.message || 'Gagal membuat kontrak sewa' }, { status: 500 });
+    return handleApiError(error, 'Gagal membuat kontrak sewa');
   }
 }

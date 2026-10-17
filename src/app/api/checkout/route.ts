@@ -5,6 +5,7 @@ import { Role, StatusKamar, StatusKontrak, StatusVerifikasi } from '@prisma/clie
 import { sendWhatsAppMessage } from '@/lib/fonnte';
 import { formatRupiah } from '@/lib/utils';
 import { logAktivitas } from '@/lib/log';
+import { handleApiError } from '@/lib/errors';
 import { z } from 'zod';
 
 const checkoutSchema = z.object({
@@ -20,7 +21,7 @@ export async function POST(req: NextRequest) {
 
     const parseResult = checkoutSchema.safeParse(body);
     if (!parseResult.success) {
-      const errorMsg = parseResult.error.errors.map((e) => e.message).join(', ');
+      const errorMsg = parseResult.error.issues.map((e) => e.message).join(', ');
       return NextResponse.json({ error: errorMsg }, { status: 400 });
     }
 
@@ -149,7 +150,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
-    console.error('Checkout error:', error);
-    return NextResponse.json({ error: error.message || 'Gagal memproses checkout' }, { status: 500 });
+    return handleApiError(error, 'Gagal memproses checkout');
   }
 }

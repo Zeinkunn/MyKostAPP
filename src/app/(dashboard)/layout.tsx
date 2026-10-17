@@ -21,7 +21,7 @@ export default async function DashboardLayout({
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Desktop Sidebar for Owner / Admin */}
-      {!isPenghuni && <OwnerSidebar />}
+      {!isPenghuni && <OwnerSidebar role={session.role} />}
 
       {/* Main Content Area */}
       <div className={isPenghuni ? 'w-full pb-20' : 'lg:pl-64 w-full pb-20 lg:pb-8'}>

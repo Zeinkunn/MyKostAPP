@@ -4,6 +4,8 @@ import { StatusTagihan, DendaMode } from '@prisma/client';
 import { sendWhatsAppMessage } from '@/lib/fonnte';
 import { formatDateIndonesian, formatRupiah } from '@/lib/utils';
 import { generateMonthlyBills } from '@/lib/tagihan';
+import { hitungDenda } from '@/lib/denda';
+import { handleApiError } from '@/lib/errors';
 
 function getJakartaDateParts(date: Date = new Date()) {
   const formatter = new Intl.DateTimeFormat('en-CA', {
@@ -68,20 +70,26 @@ export async function GET(req: NextRequest) {
     const dendaPerHari = Number(settings.denda_per_hari || 50000);
     const dendaMode = settings.denda_mode || DendaMode.HARIAN;
 
-    // 3. Query all unpaid or overdue bills
-    const unpaidBills = await prisma.tagihan.findMany({
-      where: {
-        status: { in: [StatusTagihan.BELUM_BAYAR, StatusTagihan.TERLAMBAT] },
-      },
-      include: {
-        kontrak: {
-          include: {
-            kamar: { select: { nomor_kamar: true } },
-            penghuni: { select: { nama: true, no_hp: true } },
+    // 3. Query all unpaid or overdue bills and manual fine adjustment logs
+    const [unpaidBills, manualAdjustmentLogs] = await Promise.all([
+      prisma.tagihan.findMany({
+        where: {
+          status: { in: [StatusTagihan.BELUM_BAYAR, StatusTagihan.TERLAMBAT] },
+        },
+        include: {
+          kontrak: {
+            include: {
+              kamar: { select: { nomor_kamar: true } },
+              penghuni: { select: { nama: true, no_hp: true } },
+            },
           },
         },
-      },
-    });
+      }),
+      prisma.logAktivitas.findMany({
+        where: { aksi: 'sesuaikan_tagihan' },
+        select: { detail: true },
+      }),
+    ]);
 
     let sentCount = 0;
     let lateUpdatedCount = 0;
@@ -96,14 +104,20 @@ export async function GET(req: NextRequest) {
       const isOverdue = diffInDays < 0;
       const daysOverdue = isOverdue ? Math.abs(diffInDays) : 0;
 
-      // Calculate fine (denda) based on denda_mode
-      let calculatedDenda = 0;
+      const nomorKamar = tagihan.kontrak.kamar.nomor_kamar;
+      const nama = tagihan.kontrak.penghuni.nama;
+      const legacySignature = `Kamar ${nomorKamar} (${nama}) periode ${tagihan.periode}`;
+      const isManuallyAdjusted = manualAdjustmentLogs.some(
+        (log) =>
+          log.detail.includes(`[TAGIHAN_ID:${tagihan.id}]`) ||
+          log.detail.includes(legacySignature)
+      );
+
+      // Calculate fine (denda) based on denda_mode while respecting manual adjustments
+      let calculatedDenda = Number(tagihan.denda);
       if (isOverdue) {
-        if (dendaMode === DendaMode.HARIAN) {
-          calculatedDenda = dendaPerHari * daysOverdue;
-        } else {
-          // TETAP (flat rate applied once)
-          calculatedDenda = dendaPerHari;
+        if (!isManuallyAdjusted) {
+          calculatedDenda = hitungDenda(dendaMode, dendaPerHari, daysOverdue);
         }
 
         // Update tagihan status and denda in DB if changed
@@ -138,11 +152,11 @@ export async function GET(req: NextRequest) {
       const effectiveDenda = isOverdue ? calculatedDenda : Number(tagihan.denda);
       const totalJumlah = Number(tagihan.jumlah) + effectiveDenda;
       const phone = tagihan.kontrak.penghuni.no_hp;
-      const nama = tagihan.kontrak.penghuni.nama;
-      const nomorKamar = tagihan.kontrak.kamar.nomor_kamar;
 
       // 5. Build dynamic message from Settings wa_template
-      let template = settings.wa_template || 'Halo Sdr/i {NAMA}, Tagihan sewa kamar {KAMAR} periode {PERIODE} sebesar {JUMLAH} akan jatuh tempo pada {JATUH_TEMPO}.';
+      const template =
+        settings.wa_template ||
+        'Halo Sdr/i {NAMA}, Tagihan sewa kamar {KAMAR} periode {PERIODE} sebesar {JUMLAH} akan jatuh tempo pada {JATUH_TEMPO}.';
 
       let waMessage = template
         .replace(/{NAMA}/g, nama)
@@ -180,7 +194,6 @@ export async function GET(req: NextRequest) {
       sentCount,
     });
   } catch (error: any) {
-    console.error('Cron tagihan error:', error);
-    return NextResponse.json({ error: error.message || 'Gagal menjalankan cron tagihan' }, { status: 500 });
+    return handleApiError(error, 'Gagal menjalankan cron tagihan');
   }
 }

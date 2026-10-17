@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
     const parseResult = forgotPasswordSchema.safeParse(body);
     if (!parseResult.success) {
       return NextResponse.json(
-        { error: parseResult.error.errors[0]?.message || 'Input tidak valid' },
+        { error: parseResult.error.issues[0]?.message || 'Input tidak valid' },
         { status: 400 }
       );
     }
@@ -39,18 +39,31 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // If penghuni exists and has user account, generate token and send WA
+    // If penghuni exists and has user account, generate token and send WA (with 3-minute cooldown protection)
     if (penghuni && penghuni.user_id) {
-      const rawToken = await createAktivasiToken(penghuni.id, 'RESET_PASSWORD', 1);
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-      const resetLink = `${appUrl}/reset-password?token=${rawToken}`;
-
-      const pesan = `Halo ${penghuni.nama},\n\nKami menerima permintaan pengaturan ulang kata sandi untuk akun MyKost Anda. Silakan klik tautan berikut untuk membuat kata sandi baru:\n\n${resetLink}\n\nTautan ini hanya berlaku 24 jam dan hanya dapat digunakan 1 kali. Jika Anda tidak merasa meminta ini, abaikan pesan ini.`;
-
-      await sendWhatsAppMessage({
-        target: penghuni.no_hp,
-        message: pesan,
+      const cooldownThreshold = new Date(Date.now() - 3 * 60 * 1000);
+      const recentToken = await prisma.aktivasiToken.findFirst({
+        where: {
+          penghuni_id: penghuni.id,
+          tipe: 'RESET_PASSWORD',
+          used_at: null,
+          created_at: { gte: cooldownThreshold },
+        },
+        select: { id: true },
       });
+
+      if (!recentToken) {
+        const rawToken = await createAktivasiToken(penghuni.id, 'RESET_PASSWORD', 1);
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || req.nextUrl.origin || 'http://localhost:3000';
+        const resetLink = `${appUrl}/reset-password?token=${rawToken}`;
+
+        const pesan = `Halo ${penghuni.nama},\n\nKami menerima permintaan pengaturan ulang kata sandi untuk akun MyKost Anda. Silakan klik tautan berikut untuk membuat kata sandi baru:\n\n${resetLink}\n\nTautan ini hanya berlaku 24 jam dan hanya dapat digunakan 1 kali. Jika Anda tidak merasa meminta ini, abaikan pesan ini.`;
+
+        await sendWhatsAppMessage({
+          target: penghuni.no_hp,
+          message: pesan,
+        });
+      }
     }
 
 

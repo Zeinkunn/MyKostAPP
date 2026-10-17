@@ -37,7 +37,9 @@ export default async function OwnerMenuPage() {
 
       {/* All Navigation Items */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-xs divide-y divide-slate-100 overflow-hidden text-xs">
-        {ownerNavItems.map((item) => {
+        {ownerNavItems
+          .filter((item) => !item.ownerOnly || user.role === Role.OWNER)
+          .map((item) => {
           const Icon = item.icon;
           return (
             <Link

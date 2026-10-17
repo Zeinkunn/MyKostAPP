@@ -1,7 +1,6 @@
 const CACHE_NAME = 'mykost-cache-v2';
 
 const PRECACHE_ASSETS = [
-  '/',
   '/manifest.json',
   '/offline.html',
   '/icons/icon-192.png',
@@ -109,10 +108,15 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 4. Default: Network fetch with offline error handling
+  // 4. Default: Network fetch with safe offline fallback Response
   event.respondWith(
-    fetch(event.request).catch(() => {
-      return caches.match(event.request);
+    fetch(event.request).catch(async () => {
+      const cached = await caches.match(event.request);
+      if (cached) return cached;
+      return new Response('Offline', {
+        status: 503,
+        headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+      });
     })
   );
 });

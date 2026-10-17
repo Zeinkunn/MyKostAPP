@@ -11,35 +11,43 @@
     "postinstall": "prisma generate"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.750.0",
-    "@aws-sdk/s3-request-presigner": "^3.1146.0",
-    "@prisma/client": "^6.4.0",
-    "bcryptjs": "^3.0.2",
+    "@aws-sdk/client-s3": "^3.1152.0",
+    "@aws-sdk/s3-request-presigner": "^3.1152.0",
+    "@prisma/adapter-pg": "^7.10.1",
+    "@prisma/client": "^7.10.1",
+    "bcryptjs": "^3.0.3",
     "browser-image-compression": "^2.0.2",
     "clsx": "^2.1.1",
     "exceljs": "^4.4.0",
-    "jose": "^6.0.8",
-    "lightningcss-linux-x64-gnu": "^1.33.0",
-    "lucide-react": "^0.475.0",
-    "next": "^15.2.0",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "tailwind-merge": "^3.0.1",
-    "zod": "^3.24.2"
+    "jose": "^6.2.12",
+    "lucide-react": "^1.59.0",
+    "next": "^16.4.2",
+    "pg": "^8.23.1",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "tailwind-merge": "^3.7.0",
+    "zod": "^4.6.7"
+  },
+  "optionalDependencies": {
+    "lightningcss-linux-x64-gnu": "^1.33.0"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4.0.7",
-    "@types/bcryptjs": "^2.4.6",
-    "@types/node": "^22.13.4",
-    "@types/react": "^19.0.10",
-    "@types/react-dom": "^19.0.4",
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/node": "^22.15.0",
+    "@types/pg": "^8.23.1",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "dotenv": "^18.0.8",
     "eslint": "^9.39.5",
-    "eslint-config-next": "^16.3.8",
-    "postcss": "^8.5.2",
-    "prisma": "^6.4.0",
-    "tailwindcss": "^4.0.7",
+    "eslint-config-next": "^16.4.2",
+    "postcss": "^8.5.30",
+    "prisma": "^7.10.1",
+    "tailwindcss": "^4.3.3",
     "tsx": "^4.23.15",
-    "typescript": "^5.7.3",
-    "vitest": "^5.0.3"
+    "typescript": "^5.8.3",
+    "vitest": "^5.0.5"
+  },
+  "overrides": {
+    "uuid": "^11.1.0"
   }
 }

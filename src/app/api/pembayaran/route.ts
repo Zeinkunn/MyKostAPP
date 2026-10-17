@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { ApiAuthError, requireAuthApi, requireRoleApi } from '@/lib/rbac';
 import { Role, StatusTagihan, StatusVerifikasi } from '@prisma/client';
-import { uploadFile } from '@/lib/r2';
+import { uploadFile, deleteFile } from '@/lib/r2';
 import { sendWhatsAppMessage } from '@/lib/fonnte';
 import { createNotifikasi, createNotifikasiOwnerAdmin } from '@/lib/notifikasi';
 import { logAktivitas } from '@/lib/log';
+import { handleApiError } from '@/lib/errors';
 import { z } from 'zod';
 
 export async function GET() {
@@ -29,21 +30,18 @@ export async function GET() {
 
     return NextResponse.json(listPembayaran);
   } catch (error: any) {
-    if (error instanceof ApiAuthError) {
-      return NextResponse.json({ error: error.message }, { status: error.status });
-    }
-    return NextResponse.json({ error: error.message || 'Terjadi kesalahan' }, { status: 500 });
+    return handleApiError(error, 'Gagal mengambil daftar pembayaran');
   }
 }
 
 const verifyPaymentSchema = z.object({
   id: z.string().min(1, 'ID Pembayaran wajib diisi'),
   status_verifikasi: z.enum([StatusVerifikasi.DISETUJUI, StatusVerifikasi.DITOLAK], {
-    errorMap: () => ({ message: 'Status verifikasi harus DISETUJUI atau DITOLAK' }),
+    message: 'Status verifikasi harus DISETUJUI atau DITOLAK',
   }),
 });
 
-// Upload proof of payment by Penghuni
+// Upload or replace proof of payment by Penghuni
 export async function POST(req: NextRequest) {
   try {
     const session = await requireAuthApi();
@@ -66,6 +64,7 @@ export async function POST(req: NextRequest) {
         kontrak: { include: { kamar: true, penghuni: true } },
         pembayaran: {
           where: { status_verifikasi: StatusVerifikasi.PENDING },
+          orderBy: { tanggal_bayar: 'desc' },
         },
       },
     });
@@ -78,17 +77,6 @@ export async function POST(req: NextRequest) {
     if (tagihan.status === StatusTagihan.LUNAS) {
       return NextResponse.json(
         { error: 'Tagihan ini sudah berstatus LUNAS. Tidak dapat melakukan pembayaran ulang.' },
-        { status: 400 }
-      );
-    }
-
-    // Rule: Reject if there is already a PENDING payment for this bill
-    if (tagihan.pembayaran.length > 0) {
-      return NextResponse.json(
-        {
-          error:
-            'Tagihan ini sudah memiliki bukti pembayaran yang sedang menunggu verifikasi admin. Mohon tunggu proses verifikasi.',
-        },
         { status: 400 }
       );
     }
@@ -108,30 +96,46 @@ export async function POST(req: NextRequest) {
     const fileBuffer = Buffer.from(await file.arrayBuffer());
     const buktiUrl = await uploadFile(fileBuffer, file.name, file.type);
 
-    const pembayaran = await prisma.pembayaran.create({
-      data: {
-        tagihan_id,
-        jumlah_dibayar: calculatedAmount,
-        metode,
-        bukti_url: buktiUrl,
-        status_verifikasi: StatusVerifikasi.PENDING,
-      },
-    });
+    const existingPending = tagihan.pembayaran[0];
+    let pembayaran;
+
+    if (existingPending) {
+      // Replace existing PENDING payment proof instead of rejecting or creating duplicate rows
+      pembayaran = await prisma.pembayaran.update({
+        where: { id: existingPending.id },
+        data: {
+          jumlah_dibayar: calculatedAmount,
+          metode,
+          bukti_url: buktiUrl,
+          tanggal_bayar: new Date(),
+        },
+      });
+
+      if (existingPending.bukti_url && existingPending.bukti_url !== 'CASH') {
+        await deleteFile(existingPending.bukti_url);
+      }
+    } else {
+      pembayaran = await prisma.pembayaran.create({
+        data: {
+          tagihan_id,
+          jumlah_dibayar: calculatedAmount,
+          metode,
+          bukti_url: buktiUrl,
+          status_verifikasi: StatusVerifikasi.PENDING,
+        },
+      });
+    }
 
     // Send In-App Notification to Owner/Admin
     await createNotifikasiOwnerAdmin({
-      judul: 'Pembayaran Baru Perlu Verifikasi',
-      pesan: `Penghuni ${tagihan.kontrak.penghuni.nama} (Kamar ${tagihan.kontrak.kamar.nomor_kamar}) telah mengunggah bukti pembayaran periode ${tagihan.periode}.`,
+      judul: existingPending ? 'Bukti Pembayaran Diperbarui' : 'Pembayaran Baru Perlu Verifikasi',
+      pesan: `Penghuni ${tagihan.kontrak.penghuni.nama} (Kamar ${tagihan.kontrak.kamar.nomor_kamar}) telah ${existingPending ? 'memperbarui' : 'mengunggah'} bukti pembayaran periode ${tagihan.periode}.`,
       tipe: 'PEMBAYARAN',
     });
 
-    return NextResponse.json(pembayaran, { status: 201 });
+    return NextResponse.json(pembayaran, { status: existingPending ? 200 : 201 });
   } catch (error: any) {
-    if (error instanceof ApiAuthError || error.status) {
-      return NextResponse.json({ error: error.message }, { status: error.status || 400 });
-    }
-    console.error('Upload pembayaran error:', error);
-    return NextResponse.json({ error: error.message || 'Gagal mengirim bukti pembayaran' }, { status: 500 });
+    return handleApiError(error, 'Gagal mengirim bukti pembayaran');
   }
 }
 
@@ -143,7 +147,7 @@ export async function PUT(req: NextRequest) {
 
     const parseResult = verifyPaymentSchema.safeParse(body);
     if (!parseResult.success) {
-      const errorMsg = parseResult.error.errors.map((e) => e.message).join(', ');
+      const errorMsg = parseResult.error.issues.map((e) => e.message).join(', ');
       return NextResponse.json({ error: errorMsg }, { status: 400 });
     }
 
@@ -179,10 +183,15 @@ export async function PUT(req: NextRequest) {
       );
     }
 
+    const now = new Date();
     const result = await prisma.$transaction(async (tx) => {
       const pembayaran = await tx.pembayaran.update({
         where: { id },
-        data: { status_verifikasi },
+        data: {
+          status_verifikasi,
+          diverifikasi_oleh: session.id,
+          diverifikasi_at: now,
+        },
       });
 
       if (status_verifikasi === StatusVerifikasi.DISETUJUI) {
@@ -228,10 +237,6 @@ export async function PUT(req: NextRequest) {
       result,
     });
   } catch (error: any) {
-    if (error instanceof ApiAuthError) {
-      return NextResponse.json({ error: error.message }, { status: error.status });
-    }
-    console.error('Verifikasi pembayaran error:', error);
-    return NextResponse.json({ error: error.message || 'Gagal memverifikasi pembayaran' }, { status: 500 });
+    return handleApiError(error, 'Gagal memverifikasi pembayaran');
   }
 }
