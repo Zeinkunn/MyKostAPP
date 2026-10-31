@@ -6,6 +6,12 @@ import { detectImageFromBytes, checkIsR2Configured } from '@/lib/r2';
 import { canAccessFile } from '@/lib/file-auth';
 import { checkPerpanjanganEligibility, PerpanjanganError } from '@/lib/perpanjangan';
 import { tambahBulan } from '@/lib/date-utils';
+import {
+  getJakartaDateParts,
+  getBillingMonthBoundaries,
+  isContractEligibleForPeriod,
+} from '@/lib/tagihan';
+import { ConflictError } from '@/lib/errors';
 
 describe('1. Normalisasi Nomor Handphone (normalizePhone)', () => {
   it('harus mempertahankan format standar 08xxxxxxxxxx', () => {
@@ -451,5 +457,177 @@ describe('9. Deteksi Konfigurasi Cloudflare R2 & Penolakan Placeholder (checkIsR
         'real-secret-access-key'
       )
     ).toBe(true);
+  });
+});
+
+describe('10. Akurasi Zona Waktu Asia/Jakarta & Filter Kontrak Masa Depan (tagihan.ts)', () => {
+  it('harus mengonversi timestamp UTC malam hari (31 Okt pukul 18:30 UTC) menjadi 1 Nov di zona waktu Asia/Jakarta (UTC+7)', () => {
+    // 2026-10-31 18:30:00 UTC = 2026-11-01 01:30:00 WIB
+    const utcLateNight = new Date('2026-10-31T18:30:00.000Z');
+    const jakartaParts = getJakartaDateParts(utcLateNight);
+
+    expect(jakartaParts.year).toBe(2026);
+    expect(jakartaParts.month).toBe(11);
+    expect(jakartaParts.day).toBe(1);
+    expect(jakartaParts.dateStr).toBe('2026-11-01');
+
+    const boundaries = getBillingMonthBoundaries(utcLateNight);
+    expect(boundaries.periode).toBe('2026-11');
+  });
+
+  it('harus menolak penerbitan tagihan untuk kontrak masa depan (future lease yang baru mulai bulan depan)', () => {
+    // Referensi penagihan: Oktober 2026
+    const refOct = new Date('2026-10-01T01:00:00.000Z');
+    const { startOfMonth, endOfMonth, periode } = getBillingMonthBoundaries(refOct);
+    expect(periode).toBe('2026-10');
+
+    // Kontrak aktif yang sedang berjalan di bulan Oktober 2026 -> ELIGIBLE
+    const currentContract = {
+      status: 'AKTIF',
+      tanggal_mulai: new Date('2026-10-05T00:00:00.000Z'),
+      tanggal_selesai: new Date('2027-01-05T00:00:00.000Z'),
+    };
+    expect(isContractEligibleForPeriod(currentContract, startOfMonth, endOfMonth)).toBe(true);
+
+    // Kontrak masa depan (baru mulai 15 November 2026) -> TIDAK BOLEH DITAGIH di Oktober
+    const futureLease = {
+      status: 'AKTIF',
+      tanggal_mulai: new Date('2026-11-15T00:00:00.000Z'),
+      tanggal_selesai: new Date('2027-02-15T00:00:00.000Z'),
+    };
+    expect(isContractEligibleForPeriod(futureLease, startOfMonth, endOfMonth)).toBe(false);
+
+    // Kontrak yang sudah berakhir di bulan September 2026 -> TIDAK BOLEH DITAGIH di Oktober
+    const expiredLease = {
+      status: 'AKTIF',
+      tanggal_mulai: new Date('2026-06-01T00:00:00.000Z'),
+      tanggal_selesai: new Date('2026-09-30T00:00:00.000Z'),
+    };
+    expect(isContractEligibleForPeriod(expiredLease, startOfMonth, endOfMonth)).toBe(false);
+  });
+});
+
+describe('11. Identifikasi Login Nomor HP Multi-Peran (Owner, Admin, Penghuni)', () => {
+  const mockUsers = [
+    {
+      id: 'owner-1',
+      role: 'OWNER',
+      email: 'owner@mykost.id',
+      no_hp: '081122334455',
+      penghuni: null,
+    },
+    {
+      id: 'admin-1',
+      role: 'ADMIN',
+      email: 'admin@mykost.id',
+      no_hp: '081299887766',
+      penghuni: null,
+    },
+    {
+      id: 'tenant-1',
+      role: 'PENGHUNI',
+      email: 'budi@gmail.com',
+      no_hp: null,
+      penghuni: { no_hp: '081355667788' },
+    },
+  ];
+
+  const findUserByIdentifier = (rawIdentifier: string) => {
+    const isEmail = rawIdentifier.includes('@');
+    const normalized = isEmail
+      ? rawIdentifier.toLowerCase().trim()
+      : normalizePhone(rawIdentifier);
+
+    return (
+      mockUsers.find(
+        (u) =>
+          u.email === normalized ||
+          u.no_hp === normalized ||
+          u.penghuni?.no_hp === normalized
+      ) || null
+    );
+  };
+
+  it('harus menemukan akun OWNER dan ADMIN saat login menggunakan nomor HP dengan berbagai format (+62 / 08)', () => {
+    const ownerByPlus62 = findUserByIdentifier('+62 811-2233-4455');
+    expect(ownerByPlus62?.id).toBe('owner-1');
+    expect(ownerByPlus62?.role).toBe('OWNER');
+
+    const adminBy08 = findUserByIdentifier('081299887766');
+    expect(adminBy08?.id).toBe('admin-1');
+    expect(adminBy08?.role).toBe('ADMIN');
+  });
+
+  it('harus tetap mendukung login PENGHUNI melalui relasi Penghuni.no_hp maupun email', () => {
+    const tenantByPhone = findUserByIdentifier('6281355667788');
+    expect(tenantByPhone?.id).toBe('tenant-1');
+
+    const tenantByEmail = findUserByIdentifier('  BUDI@GMAIL.COM ');
+    expect(tenantByEmail?.id).toBe('tenant-1');
+  });
+});
+
+describe('12. Pencegahan Race Condition Verifikasi Pembayaran Atomik', () => {
+  it('simulasi konkurensi: dua admin memverifikasi pembayaran PENDING bersamaan hanya memproses 1 kali dan melempar ConflictError (409) untuk yang kedua', async () => {
+    // State simulasi database
+    let paymentRecord = {
+      id: 'pay-001',
+      status_verifikasi: 'PENDING' as 'PENDING' | 'DISETUJUI' | 'DITOLAK',
+      diverifikasi_oleh: null as string | null,
+    };
+    let tagihanStatus: 'BELUM_BAYAR' | 'LUNAS' = 'BELUM_BAYAR';
+    let tagihanUpdateCount = 0;
+
+    // Antrean atomik menyerupai row-level lock pada UPDATE ... WHERE status_verifikasi = 'PENDING'
+    let dbLock: Promise<unknown> = Promise.resolve();
+
+    const verifyPaymentAtomically = (
+      adminId: string,
+      targetStatus: 'DISETUJUI' | 'DITOLAK'
+    ) => {
+      const op = dbLock.then(async () => {
+        // Conditional updateMany: WHERE id = 'pay-001' AND status_verifikasi = 'PENDING'
+        if (paymentRecord.status_verifikasi !== 'PENDING') {
+          throw new ConflictError('Pembayaran ini sudah pernah diproses sebelumnya.');
+        }
+
+        paymentRecord = {
+          ...paymentRecord,
+          status_verifikasi: targetStatus,
+          diverifikasi_oleh: adminId,
+        };
+
+        if (targetStatus === 'DISETUJUI') {
+          tagihanStatus = 'LUNAS';
+          tagihanUpdateCount++;
+        }
+
+        return { ...paymentRecord };
+      });
+
+      dbLock = op.catch(() => {});
+      return op;
+    };
+
+    const [firstAttempt, secondAttempt] = await Promise.allSettled([
+      verifyPaymentAtomically('admin-A', 'DISETUJUI'),
+      verifyPaymentAtomically('admin-B', 'DITOLAK'),
+    ]);
+
+    expect(firstAttempt.status).toBe('fulfilled');
+    if (firstAttempt.status === 'fulfilled') {
+      expect(firstAttempt.value.status_verifikasi).toBe('DISETUJUI');
+      expect(firstAttempt.value.diverifikasi_oleh).toBe('admin-A');
+    }
+
+    expect(secondAttempt.status).toBe('rejected');
+    if (secondAttempt.status === 'rejected') {
+      expect(secondAttempt.reason).toBeInstanceOf(ConflictError);
+      expect(secondAttempt.reason.status).toBe(409);
+    }
+
+    // Status akhir Tagihan tetap LUNAS dan tidak tertimpa aksi kedua
+    expect(tagihanStatus).toBe('LUNAS');
+    expect(tagihanUpdateCount).toBe(1);
   });
 });

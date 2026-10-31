@@ -1,9 +1,30 @@
 import { NextResponse } from 'next/server';
-import { ApiAuthError } from './rbac';
 import { ZodError } from 'zod';
+
+export class ApiAuthError extends Error {
+  status: number;
+  constructor(message: string, status: number = 401) {
+    super(message);
+    this.name = 'ApiAuthError';
+    this.status = status;
+  }
+}
+
+export class ConflictError extends Error {
+  status: number;
+  constructor(message = 'Data telah diproses atau terjadi konflik perubahan bersamaan') {
+    super(message);
+    this.name = 'ConflictError';
+    this.status = 409;
+  }
+}
 
 export function handleApiError(error: unknown, fallbackMessage = 'Terjadi kesalahan pada server') {
   if (error instanceof ApiAuthError) {
+    return NextResponse.json({ error: error.message }, { status: error.status });
+  }
+
+  if (error instanceof ConflictError) {
     return NextResponse.json({ error: error.message }, { status: error.status });
   }
 

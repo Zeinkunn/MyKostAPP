@@ -1,15 +1,9 @@
 import { getCurrentSession, UserSessionPayload } from './auth';
 import { Role } from '@prisma/client';
 import { redirect } from 'next/navigation';
+import { ApiAuthError } from './errors';
 
-export class ApiAuthError extends Error {
-  status: number;
-  constructor(message: string, status: number = 401) {
-    super(message);
-    this.name = 'ApiAuthError';
-    this.status = status;
-  }
-}
+export { ApiAuthError };
 
 export async function requireAuth(): Promise<UserSessionPayload> {
   const session = await getCurrentSession();

@@ -33,6 +33,7 @@ export async function sendWhatsAppMessage(payload: WhatsAppMessagePayload): Prom
         message: payload.message,
         url: payload.url,
       }),
+      signal: AbortSignal.timeout(5000),
     });
 
     const result = await response.json();

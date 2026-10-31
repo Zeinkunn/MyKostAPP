@@ -6,7 +6,7 @@ import { uploadFile, deleteFile } from '@/lib/r2';
 import { sendWhatsAppMessage } from '@/lib/fonnte';
 import { createNotifikasi, createNotifikasiOwnerAdmin } from '@/lib/notifikasi';
 import { logAktivitas } from '@/lib/log';
-import { handleApiError } from '@/lib/errors';
+import { ConflictError, handleApiError } from '@/lib/errors';
 import { z } from 'zod';
 
 export async function GET() {
@@ -51,9 +51,16 @@ export async function POST(req: NextRequest) {
     const metode = ((formData.get('metode') as string)?.trim()) || 'Transfer Bank';
     const file = formData.get('bukti') as File | null;
 
-    if (!tagihan_id || !file) {
+    if (!tagihan_id || !(file instanceof File)) {
       return NextResponse.json(
         { error: 'ID Tagihan dan file Bukti Pembayaran wajib disertakan' },
+        { status: 400 }
+      );
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      return NextResponse.json(
+        { error: 'Ukuran file bukti pembayaran maksimal 5MB' },
         { status: 400 }
       );
     }
@@ -174,25 +181,20 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: 'Data pembayaran tidak ditemukan' }, { status: 404 });
     }
 
-    if (existingPembayaran.status_verifikasi !== StatusVerifikasi.PENDING) {
-      return NextResponse.json(
-        {
-          error: `Pembayaran ini sudah pernah diproses sebelumnya (status saat ini: ${existingPembayaran.status_verifikasi}).`,
-        },
-        { status: 409 }
-      );
-    }
-
     const now = new Date();
-    const result = await prisma.$transaction(async (tx) => {
-      const pembayaran = await tx.pembayaran.update({
-        where: { id },
+    const updatedPembayaran = await prisma.$transaction(async (tx) => {
+      const updated = await tx.pembayaran.updateMany({
+        where: { id, status_verifikasi: StatusVerifikasi.PENDING },
         data: {
           status_verifikasi,
           diverifikasi_oleh: session.id,
           diverifikasi_at: now,
         },
       });
+
+      if (updated.count === 0) {
+        throw new ConflictError('Pembayaran ini sudah pernah diproses sebelumnya.');
+      }
 
       if (status_verifikasi === StatusVerifikasi.DISETUJUI) {
         await tx.tagihan.update({
@@ -202,7 +204,7 @@ export async function PUT(req: NextRequest) {
       }
       // If DITOLAK, tagihan status remains unchanged (BELUM_BAYAR / TERLAMBAT)
 
-      return pembayaran;
+      return tx.pembayaran.findUnique({ where: { id } });
     });
 
     // Send notifications strictly after transaction commits
@@ -234,7 +236,7 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({
       success: true,
       message: `Pembayaran berhasil diubah menjadi ${status_verifikasi}`,
-      result,
+      result: updatedPembayaran,
     });
   } catch (error: any) {
     return handleApiError(error, 'Gagal memverifikasi pembayaran');

@@ -3,24 +3,13 @@ import { prisma } from '@/lib/prisma';
 import { StatusTagihan, DendaMode } from '@prisma/client';
 import { sendWhatsAppMessage } from '@/lib/fonnte';
 import { formatDateIndonesian, formatRupiah } from '@/lib/utils';
-import { generateMonthlyBills } from '@/lib/tagihan';
+import { generateMonthlyBills, getJakartaDateParts } from '@/lib/tagihan';
 import { hitungDenda } from '@/lib/denda';
 import { handleApiError } from '@/lib/errors';
 
-function getJakartaDateParts(date: Date = new Date()) {
-  const formatter = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Asia/Jakarta',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  });
-  // 'en-CA' outputs YYYY-MM-DD
-  const formatted = formatter.format(date);
-  const [year, month, day] = formatted.split('-').map(Number);
-  return { year, month, day, dateStr: formatted };
-}
+const WA_BATCH_SIZE = 5;
 
-function getDifferenceInDaysJakarta(targetDate: Date, referenceDate: Date = new Date()): number {
+export function getDifferenceInDaysJakarta(targetDate: Date, referenceDate: Date = new Date()): number {
   const target = getJakartaDateParts(targetDate);
   const ref = getJakartaDateParts(referenceDate);
 
@@ -70,29 +59,48 @@ export async function GET(req: NextRequest) {
     const dendaPerHari = Number(settings.denda_per_hari || 50000);
     const dendaMode = settings.denda_mode || DendaMode.HARIAN;
 
-    // 3. Query all unpaid or overdue bills and manual fine adjustment logs
-    const [unpaidBills, manualAdjustmentLogs] = await Promise.all([
-      prisma.tagihan.findMany({
-        where: {
-          status: { in: [StatusTagihan.BELUM_BAYAR, StatusTagihan.TERLAMBAT] },
-        },
-        include: {
-          kontrak: {
-            include: {
-              kamar: { select: { nomor_kamar: true } },
-              penghuni: { select: { nama: true, no_hp: true } },
-            },
+    // 3. Query all unpaid or overdue bills
+    const unpaidBills = await prisma.tagihan.findMany({
+      where: {
+        status: { in: [StatusTagihan.BELUM_BAYAR, StatusTagihan.TERLAMBAT] },
+      },
+      include: {
+        kontrak: {
+          include: {
+            kamar: { select: { nomor_kamar: true } },
+            penghuni: { select: { nama: true, no_hp: true } },
           },
         },
-      }),
-      prisma.logAktivitas.findMany({
-        where: { aksi: 'sesuaikan_tagihan' },
-        select: { detail: true },
-      }),
-    ]);
+      },
+    });
+
+    // Scope manual adjustment log query strictly to overdue bills to prevent unbounded table scan
+    const overdueBills = unpaidBills.filter(
+      (t) => getDifferenceInDaysJakarta(new Date(t.jatuh_tempo), now) < 0
+    );
+
+    const manualAdjustmentLogs =
+      overdueBills.length > 0
+        ? await prisma.logAktivitas.findMany({
+            where: {
+              aksi: 'sesuaikan_tagihan',
+              OR: overdueBills.flatMap((t) => [
+                { detail: { contains: `[TAGIHAN_ID:${t.id}]` } },
+                {
+                  detail: {
+                    contains: `Kamar ${t.kontrak.kamar.nomor_kamar} (${t.kontrak.penghuni.nama}) periode ${t.periode}`,
+                  },
+                },
+              ]),
+            },
+            select: { detail: true },
+          })
+        : [];
 
     let sentCount = 0;
     let lateUpdatedCount = 0;
+
+    const reminderTasks: Array<{ tagihanId: string; phone: string; waMessage: string }> = [];
 
     for (const tagihan of unpaidBills) {
       const dueDate = new Date(tagihan.jatuh_tempo);
@@ -171,18 +179,39 @@ export async function GET(req: NextRequest) {
         waMessage = `*[PENGINGAT TAGIHAN SEWA - MYKOST]*\n\n${waMessage}\n\nMohon lakukan pembayaran tepat waktu via aplikasi MyKost.`;
       }
 
-      const success = await sendWhatsAppMessage({
-        target: phone,
-        message: waMessage,
+      reminderTasks.push({
+        tagihanId: tagihan.id,
+        phone,
+        waMessage,
       });
+    }
 
-      if (success) {
-        // Record timestamp to enforce 24h anti-spam cooldown
-        await prisma.tagihan.update({
-          where: { id: tagihan.id },
+    // 6. Batched concurrent execution for WhatsApp reminders (5 requests per batch)
+    for (let i = 0; i < reminderTasks.length; i += WA_BATCH_SIZE) {
+      const batch = reminderTasks.slice(i, i + WA_BATCH_SIZE);
+      const results = await Promise.allSettled(
+        batch.map(async (task) => {
+          const success = await sendWhatsAppMessage({
+            target: task.phone,
+            message: task.waMessage,
+          });
+          return { tagihanId: task.tagihanId, success };
+        })
+      );
+
+      const succeededIds: string[] = [];
+      for (const res of results) {
+        if (res.status === 'fulfilled' && res.value.success) {
+          succeededIds.push(res.value.tagihanId);
+        }
+      }
+
+      if (succeededIds.length > 0) {
+        await prisma.tagihan.updateMany({
+          where: { id: { in: succeededIds } },
           data: { terakhir_diingatkan_at: now },
         });
-        sentCount++;
+        sentCount += succeededIds.length;
       }
     }
 

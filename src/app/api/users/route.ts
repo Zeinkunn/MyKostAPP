@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { requireAuthApi, requireRoleApi } from '@/lib/rbac';
 import { Role } from '@prisma/client';
 import { hashPassword, setSessionCookie } from '@/lib/auth';
+import { normalizePhone } from '@/lib/phone';
 import { logAktivitas } from '@/lib/log';
 import { handleApiError } from '@/lib/errors';
 import { z } from 'zod';
@@ -108,6 +109,38 @@ export async function PUT(req: NextRequest) {
       );
     }
 
+    const cleanPhone = no_hp ? normalizePhone(no_hp) : null;
+
+    if (cleanPhone) {
+      const existingUserPhone = await prisma.user.findFirst({
+        where: {
+          no_hp: cleanPhone,
+          NOT: { id: session.id },
+        },
+      });
+
+      if (existingUserPhone) {
+        return NextResponse.json(
+          { error: 'Nomor HP ini sudah digunakan oleh pengguna lain' },
+          { status: 400 }
+        );
+      }
+
+      const existingPenghuniPhone = await prisma.penghuni.findFirst({
+        where: {
+          no_hp: cleanPhone,
+          NOT: { user_id: session.id },
+        },
+      });
+
+      if (existingPenghuniPhone) {
+        return NextResponse.json(
+          { error: 'Nomor HP ini sudah digunakan oleh penghuni lain' },
+          { status: 400 }
+        );
+      }
+    }
+
     // Atomically synchronize user and penghuni record
     const updatedUser = await prisma.$transaction(async (tx) => {
       const user = await tx.user.update({
@@ -115,14 +148,18 @@ export async function PUT(req: NextRequest) {
         data: {
           nama,
           email,
-          ...(no_hp !== undefined && { no_hp: no_hp ? no_hp.trim() : null }),
+          ...(no_hp !== undefined && { no_hp: cleanPhone }),
         },
       });
 
       if (session.role === Role.PENGHUNI) {
         await tx.penghuni.updateMany({
           where: { user_id: session.id },
-          data: { nama, email },
+          data: {
+            nama,
+            email,
+            ...(cleanPhone ? { no_hp: cleanPhone } : {}),
+          },
         });
       }
 

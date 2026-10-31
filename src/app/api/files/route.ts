@@ -124,13 +124,20 @@ export async function GET(req: NextRequest) {
     }
 
     // Authorized (OWNER, ADMIN, or authorized PENGHUNI)
+    const cacheHeaders = {
+      'Cache-Control': 'private, max-age=600',
+    };
+
     if (s3Client) {
       const signedUrl = await getFileSignedUrl(sanitizedKey, 900); // 15 minutes validity
-      return NextResponse.redirect(signedUrl, 302);
+      return NextResponse.redirect(signedUrl, { status: 302, headers: cacheHeaders });
     }
 
     // Local dev fallback
-    return NextResponse.redirect(new URL(`/uploads/${sanitizedKey}`, req.url));
+    return NextResponse.redirect(new URL(`/uploads/${sanitizedKey}`, req.url), {
+      status: 302,
+      headers: cacheHeaders,
+    });
   } catch (error: any) {
     return handleApiError(error, 'Gagal memproses permintaan berkas');
   }

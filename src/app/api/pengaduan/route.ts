@@ -68,18 +68,36 @@ export async function POST(req: NextRequest) {
 
     const kategori = (formData.get('kategori') as string)?.trim() || 'Fasilitas Kamar';
     const deskripsi = (formData.get('deskripsi') as string)?.trim();
-    const files = formData.getAll('foto') as File[];
+    const rawFiles = formData.getAll('foto');
 
     if (!deskripsi) {
       return NextResponse.json({ error: 'Deskripsi komplain wajib diisi' }, { status: 400 });
     }
 
+    const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+    const validFiles: File[] = [];
+    for (const item of rawFiles) {
+      if (item instanceof File && item.size > 0) {
+        validFiles.push(item);
+      }
+    }
+
     // Security rule 2.4: Limit maximum files to 3 per complaint
-    if (files.length > 3) {
+    if (rawFiles.length > 3 || validFiles.length > 3) {
       return NextResponse.json(
         { error: 'Maksimal 3 foto lampiran yang diperbolehkan per pengaduan' },
         { status: 400 }
       );
+    }
+
+    // Validate each file size BEFORE reading arrayBuffer into RAM
+    for (const file of validFiles) {
+      if (file.size > MAX_FILE_SIZE) {
+        return NextResponse.json(
+          { error: 'Ukuran setiap foto lampiran maksimal 5MB' },
+          { status: 400 }
+        );
+      }
     }
 
     const penghuni = await prisma.penghuni.findUnique({
@@ -105,12 +123,10 @@ export async function POST(req: NextRequest) {
 
     // Upload photos (max 3)
     const fotoUrls: string[] = [];
-    for (const file of files.slice(0, 3)) {
-      if (file && file.size > 0) {
-        const fileBuffer = Buffer.from(await file.arrayBuffer());
-        const url = await uploadFile(fileBuffer, file.name, file.type);
-        fotoUrls.push(url);
-      }
+    for (const file of validFiles.slice(0, 3)) {
+      const fileBuffer = Buffer.from(await file.arrayBuffer());
+      const url = await uploadFile(fileBuffer, file.name, file.type);
+      fotoUrls.push(url);
     }
 
     const newPengaduan = await prisma.pengaduan.create({

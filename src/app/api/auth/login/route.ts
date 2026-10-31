@@ -38,10 +38,14 @@ export async function POST(req: NextRequest) {
     const rateLimitKey = `${clientIp}:${normalizedIdentifier}`;
     const now = new Date();
 
-    // Clean up expired rate limit entries
-    await prisma.loginAttempt.deleteMany({
-      where: { expires_at: { lt: now } },
-    }).catch(() => {});
+    // Clean up expired rate limit entries probabilistically (1 in 50 requests) & non-blocking
+    if (Math.random() < 0.02) {
+      void prisma.loginAttempt
+        .deleteMany({
+          where: { expires_at: { lt: now } },
+        })
+        .catch(() => {});
+    }
 
     // Check existing rate limit in DB
     const existingAttempt = await prisma.loginAttempt.findUnique({
@@ -88,6 +92,7 @@ export async function POST(req: NextRequest) {
       where: {
         OR: [
           { email: normalizedIdentifier },
+          { no_hp: normalizedIdentifier },
           { penghuni: { no_hp: normalizedIdentifier } },
         ],
       },

@@ -37,6 +37,15 @@ export default function UploadBuktiBayarPage() {
       .catch((err) => console.error('Gagal memuat info bank:', err));
   }, []);
 
+  // Revoke object URL when previewUrl changes or component unmounts to prevent mobile/PWA memory leaks
+  useEffect(() => {
+    return () => {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
+
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
@@ -51,11 +60,17 @@ export default function UploadBuktiBayarPage() {
         };
         const compressedFile = await imageCompression(file, options);
         setSelectedFile(compressedFile);
-        setPreviewUrl(URL.createObjectURL(compressedFile));
+        setPreviewUrl((prev) => {
+          if (prev) URL.revokeObjectURL(prev);
+          return URL.createObjectURL(compressedFile);
+        });
       } catch (err) {
         console.error('Compression error:', err);
         setSelectedFile(file);
-        setPreviewUrl(URL.createObjectURL(file));
+        setPreviewUrl((prev) => {
+          if (prev) URL.revokeObjectURL(prev);
+          return URL.createObjectURL(file);
+        });
       } finally {
         setCompressing(false);
       }
