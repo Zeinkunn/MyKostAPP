@@ -8,11 +8,16 @@
     "start": "next start",
     "lint": "eslint .",
     "test": "vitest run",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "cap:sync": "cap sync android",
+    "cap:open": "cap open android",
+    "apk:build": "cap sync android && cd android && ./gradlew assembleDebug"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1152.0",
     "@aws-sdk/s3-request-presigner": "^3.1152.0",
+    "@capacitor/android": "^8.6.0",
+    "@capacitor/core": "^8.6.0",
     "@prisma/adapter-pg": "^7.10.1",
     "@prisma/client": "^7.10.1",
     "bcryptjs": "^3.0.3",
@@ -32,6 +37,7 @@
     "lightningcss-linux-x64-gnu": "^1.33.0"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.6.0",
     "@tailwindcss/postcss": "^4.3.3",
     "@types/node": "^22.15.0",
     "@types/pg": "^8.23.1",

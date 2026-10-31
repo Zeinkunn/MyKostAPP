@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Plus, MessageSquare, Clock, CheckCircle2, AlertCircle } from 'lucide-react';
 import { formatDateIndonesian, getStatusBadgeStyle, getFileDisplayUrl } from '@/lib/utils';
 
@@ -104,10 +105,13 @@ export default function PenghuniKomplainPage() {
               {item.foto_url && item.foto_url.length > 0 && (
                 <div className="flex gap-2 overflow-x-auto pt-1">
                   {item.foto_url.map((url, i) => (
-                    <img
+                    <Image
                       key={i}
                       src={getFileDisplayUrl(url)}
                       alt="Bukti foto"
+                      width={64}
+                      height={64}
+                      unoptimized
                       className="w-16 h-16 rounded-xl object-cover border border-slate-200"
                     />
                   ))}

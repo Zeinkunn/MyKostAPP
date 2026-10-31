@@ -1,0 +1,120 @@
+name: Build & Release Android APK
+
+on:
+  push:
+    branches: [dev, main]
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      server_url:
+        description: 'Server URL untuk MyKost (contoh: https://mykost.vercel.app)'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+jobs:
+  build-android:
+    name: Build APK & Publish Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Setup Java JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'gradle'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Sync Capacitor Android
+        env:
+          CAPACITOR_SERVER_URL: ${{ inputs.server_url || vars.CAPACITOR_SERVER_URL || secrets.CAPACITOR_SERVER_URL || vars.NEXT_PUBLIC_APP_URL || 'http://10.0.2.2:3000' }}
+        run: npx cap sync android
+
+      - name: Make Gradlew Executable & Build APK
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+
+      - name: Package APK & ZIP Bundle
+        run: |
+          mkdir -p release-dist
+          cp android/app/build/outputs/apk/debug/app-debug.apk release-dist/MyKost.apk
+          cd release-dist
+          sha256sum MyKost.apk > SHA256SUMS.txt
+          cat << 'EOF' > CARA-INSTALL.txt
+          ====================================================
+          PANDUAN INSTALASI APLIKASI ANDROID MYKOST (.APK)
+          ====================================================
+          1. Unduh file MyKost.apk ke ponsel Android Anda (atau ekstrak dari MyKost-Android-Bundle.zip).
+          2. Buka file MyKost.apk di ponsel.
+          3. Jika muncul konfirmasi keamanan Android, aktifkan "Izinkan dari sumber ini" (Install unknown apps).
+          4. Tekan "Install" / "Pasang" dan buka aplikasi MyKost.
+          EOF
+          zip -r MyKost-Android-Bundle.zip MyKost.apk SHA256SUMS.txt CARA-INSTALL.txt
+
+      - name: Upload Artifacts to Workflow Run
+        uses: actions/upload-artifact@v4
+        with:
+          name: MyKost-Android-Release
+          path: |
+            release-dist/MyKost.apk
+            release-dist/MyKost-Android-Bundle.zip
+            release-dist/SHA256SUMS.txt
+
+      - name: Determine Release Tag & Metadata
+        id: meta
+        run: |
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            TAG_NAME="${GITHUB_REF#refs/tags/}"
+            RELEASE_TITLE="MyKost Android ${TAG_NAME}"
+            IS_PRERELEASE="false"
+          elif [[ "${GITHUB_REF_NAME}" == "main" ]]; then
+            TAG_NAME="latest"
+            RELEASE_TITLE="MyKost Android — Latest Stable (${SHORT_SHA})"
+            IS_PRERELEASE="false"
+          else
+            TAG_NAME="latest-dev"
+            RELEASE_TITLE="MyKost Android — Dev Build (${SHORT_SHA})"
+            IS_PRERELEASE="true"
+          fi
+          echo "tag_name=${TAG_NAME}" >> $GITHUB_OUTPUT
+          echo "release_title=${RELEASE_TITLE}" >> $GITHUB_OUTPUT
+          echo "is_prerelease=${IS_PRERELEASE}" >> $GITHUB_OUTPUT
+          echo "short_sha=${SHORT_SHA}" >> $GITHUB_OUTPUT
+
+      - name: Publish APK & ZIP to GitHub Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.meta.outputs.tag_name }}
+          target_commitish: ${{ github.sha }}
+          name: ${{ steps.meta.outputs.release_title }}
+          prerelease: ${{ steps.meta.outputs.is_prerelease }}
+          make_latest: ${{ steps.meta.outputs.is_prerelease == 'false' && 'true' || 'false' }}
+          body: |
+            ## 📱 Paket Instalasi Android MyKost (`${{ steps.meta.outputs.short_sha }}`)
+
+            Rilis otomatis dari branch/tag **`${{ github.ref_name }}`**.
+
+            ### 📥 Unduhan Tersedia:
+            - **`MyKost.apk`**: File instalasi langsung untuk perangkat Android.
+            - **`MyKost-Android-Bundle.zip`**: Arsip `.zip` berisi `MyKost.apk`, panduan instalasi (`CARA-INSTALL.txt`), dan checksum `SHA256SUMS.txt`.
+          files: |
+            release-dist/MyKost.apk
+            release-dist/MyKost-Android-Bundle.zip
+            release-dist/SHA256SUMS.txt

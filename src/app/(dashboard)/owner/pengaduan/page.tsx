@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { MessageSquareWarning, CheckCircle2, Clock, Wrench, RefreshCw, X } from 'lucide-react';
 import { formatDateIndonesian, getStatusBadgeStyle, getFileDisplayUrl } from '@/lib/utils';
 
@@ -148,10 +149,13 @@ export default function OwnerPengaduanPage() {
                 {item.foto_url && item.foto_url.length > 0 && (
                   <div className="flex gap-2 overflow-x-auto pt-1">
                     {item.foto_url.map((url, i) => (
-                      <img
+                      <Image
                         key={i}
                         src={getFileDisplayUrl(url)}
                         alt="Foto komplain"
+                        width={64}
+                        height={64}
+                        unoptimized
                         className="w-16 h-16 rounded-xl object-cover border border-slate-200"
                       />
                     ))}

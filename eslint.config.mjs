@@ -8,6 +8,8 @@ export default [
       "node_modules/**",
       "public/**",
       "dist/**",
+      "android/**",
+      "mobile-shell/**",
     ],
   },
   {

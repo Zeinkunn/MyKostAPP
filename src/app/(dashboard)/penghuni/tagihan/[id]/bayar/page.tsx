@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import NextImage from 'next/image';
 import { Camera, Upload, ArrowLeft, CheckCircle, Image as ImageIcon, CreditCard, Copy, Check } from 'lucide-react';
 import imageCompression from 'browser-image-compression';
 
@@ -235,10 +236,13 @@ export default function UploadBuktiBayarPage() {
 
               {previewUrl ? (
                 <div className="border-2 border-dashed border-emerald-300 rounded-2xl p-4 text-center bg-emerald-50/40 space-y-2">
-                  <img
+                  <NextImage
                     src={previewUrl}
                     alt="Preview Bukti"
-                    className="max-h-56 mx-auto rounded-xl object-contain shadow-sm"
+                    width={400}
+                    height={400}
+                    unoptimized
+                    className="max-h-56 w-auto mx-auto rounded-xl object-contain shadow-sm"
                   />
                   <p className="text-[11px] text-emerald-700 font-semibold">
                     {compressing ? 'Mengompresi foto...' : 'Foto siap dikirim'}

@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import NextImage from 'next/image';
 import { ArrowLeft, Camera, Send, CheckCircle2, Image as ImageIcon, X } from 'lucide-react';
 import imageCompression from 'browser-image-compression';
 
@@ -60,8 +61,18 @@ export default function AjukanKomplainBaruPage() {
 
   const handleRemoveFile = (index: number) => {
     setSelectedFiles((prev) => prev.filter((_, idx) => idx !== index));
-    setPreviewUrls((prev) => prev.filter((_, idx) => idx !== index));
+    setPreviewUrls((prev) => {
+      const removed = prev[index];
+      if (removed) URL.revokeObjectURL(removed);
+      return prev.filter((_, idx) => idx !== index);
+    });
   };
+
+  useEffect(() => {
+    return () => {
+      previewUrls.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [previewUrls]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -193,9 +204,12 @@ export default function AjukanKomplainBaruPage() {
                       key={idx}
                       className="relative rounded-xl overflow-hidden border border-slate-200 bg-slate-50 aspect-square"
                     >
-                      <img
+                      <NextImage
                         src={url}
                         alt={`Preview Kerusakan ${idx + 1}`}
+                        width={160}
+                        height={160}
+                        unoptimized
                         className="w-full h-full object-cover"
                       />
                       <button

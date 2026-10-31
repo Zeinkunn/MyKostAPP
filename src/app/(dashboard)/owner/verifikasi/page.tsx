@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { CheckCircle2, XCircle, Eye, RefreshCw, Check, X } from 'lucide-react';
 import { formatRupiah, formatDateIndonesian, getFileDisplayUrl } from '@/lib/utils';
 
@@ -106,7 +107,14 @@ export default function OwnerVerifikasiPage() {
                     onClick={() => setSelectedImage(getFileDisplayUrl(item.bukti_url))}
                     className="w-20 h-24 rounded-xl bg-slate-100 border border-slate-200 overflow-hidden shrink-0 cursor-pointer relative group"
                   >
-                    <img src={getFileDisplayUrl(item.bukti_url)} alt="Bukti" className="w-full h-full object-cover" />
+                    <Image
+                      src={getFileDisplayUrl(item.bukti_url)}
+                      alt="Bukti"
+                      width={80}
+                      height={96}
+                      unoptimized
+                      className="w-full h-full object-cover"
+                    />
                     <div className="absolute inset-0 bg-slate-900/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
                       <Eye className="w-5 h-5 text-white" />
                     </div>
@@ -193,7 +201,14 @@ export default function OwnerVerifikasiPage() {
             >
               <X className="w-5 h-5" />
             </button>
-            <img src={selectedImage} alt="Bukti Transfer" className="max-h-[80vh] w-auto mx-auto object-contain rounded-xl" />
+            <Image
+              src={selectedImage}
+              alt="Bukti Transfer"
+              width={800}
+              height={1000}
+              unoptimized
+              className="max-h-[80vh] w-auto mx-auto object-contain rounded-xl"
+            />
           </div>
         </div>
       )}

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
+import Image from 'next/image';
 import { Camera, Loader2 } from 'lucide-react';
 import imageCompression from 'browser-image-compression';
 import { getFileDisplayUrl } from '@/lib/utils';
@@ -104,9 +105,12 @@ export default function AvatarUploader({
         {/* 104px avatar with gradient border */}
         <div className="w-[104px] h-[104px] rounded-full p-1 bg-gradient-to-tr from-blue-600 to-indigo-500 shadow-md">
           {displaySrc ? (
-            <img
+            <Image
               src={displaySrc}
               alt={`Foto Profil ${nama}`}
+              width={104}
+              height={104}
+              unoptimized
               className="w-full h-full object-cover rounded-full bg-slate-100"
             />
           ) : (
@@ -154,9 +158,12 @@ export default function AvatarUploader({
 
       <div className="w-24 h-24 rounded-full overflow-hidden shadow-md relative bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center text-3xl font-bold select-none">
         {displaySrc ? (
-          <img
+          <Image
             src={displaySrc}
             alt={`Foto Profil ${nama}`}
+            width={96}
+            height={96}
+            unoptimized
             className="w-full h-full object-cover rounded-full"
           />
         ) : (
