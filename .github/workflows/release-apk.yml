@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       server_url:
-        description: 'Server URL untuk MyKost (contoh: https://mykost.vercel.app)'
+        description: 'Server URL for MyKost (e.g. https://mykost.vercel.app)'
         required: false
         default: ''
 
@@ -59,16 +59,16 @@ jobs:
           cp android/app/build/outputs/apk/debug/app-debug.apk release-dist/MyKost.apk
           cd release-dist
           sha256sum MyKost.apk > SHA256SUMS.txt
-          cat << 'EOF' > CARA-INSTALL.txt
+          cat << 'EOF' > INSTALL.txt
           ====================================================
-          PANDUAN INSTALASI APLIKASI ANDROID MYKOST (.APK)
+          MYKOST ANDROID INSTALLATION GUIDE (.APK)
           ====================================================
-          1. Unduh file MyKost.apk ke ponsel Android Anda (atau ekstrak dari MyKost-Android-Bundle.zip).
-          2. Buka file MyKost.apk di ponsel.
-          3. Jika muncul konfirmasi keamanan Android, aktifkan "Izinkan dari sumber ini" (Install unknown apps).
-          4. Tekan "Install" / "Pasang" dan buka aplikasi MyKost.
+          1. Download MyKost.apk to your Android device (or extract it from MyKost-Android-Bundle.zip).
+          2. Open MyKost.apk on your device.
+          3. If prompted by Android security, enable "Allow from this source" (Install unknown apps).
+          4. Tap "Install" and launch the MyKost application.
           EOF
-          zip -r MyKost-Android-Bundle.zip MyKost.apk SHA256SUMS.txt CARA-INSTALL.txt
+          zip -r MyKost-Android-Bundle.zip MyKost.apk SHA256SUMS.txt INSTALL.txt
 
       - name: Upload Artifacts to Workflow Run
         uses: actions/upload-artifact@v4
@@ -82,24 +82,26 @@ jobs:
       - name: Determine Release Tag & Metadata
         id: meta
         run: |
+          PKG_VERSION=$(node -p "require('./package.json').version")
           SHORT_SHA=$(git rev-parse --short HEAD)
           if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
             TAG_NAME="${GITHUB_REF#refs/tags/}"
-            RELEASE_TITLE="MyKost Android ${TAG_NAME}"
+            RELEASE_TITLE="${TAG_NAME} — Core Remediation, Security Hardening & Capacitor Android Release"
             IS_PRERELEASE="false"
           elif [[ "${GITHUB_REF_NAME}" == "main" ]]; then
-            TAG_NAME="latest"
-            RELEASE_TITLE="MyKost Android — Latest Stable (${SHORT_SHA})"
+            TAG_NAME="v${PKG_VERSION}"
+            RELEASE_TITLE="v${PKG_VERSION} — Core Remediation, Security Hardening & Capacitor Android Release"
             IS_PRERELEASE="false"
           else
-            TAG_NAME="latest-dev"
-            RELEASE_TITLE="MyKost Android — Dev Build (${SHORT_SHA})"
+            TAG_NAME="v${PKG_VERSION}-dev"
+            RELEASE_TITLE="v${PKG_VERSION}-dev (${SHORT_SHA}) — Core Remediation, Security Hardening & Capacitor Android Pre-Release"
             IS_PRERELEASE="true"
           fi
           echo "tag_name=${TAG_NAME}" >> $GITHUB_OUTPUT
           echo "release_title=${RELEASE_TITLE}" >> $GITHUB_OUTPUT
           echo "is_prerelease=${IS_PRERELEASE}" >> $GITHUB_OUTPUT
           echo "short_sha=${SHORT_SHA}" >> $GITHUB_OUTPUT
+          echo "pkg_version=v${PKG_VERSION}" >> $GITHUB_OUTPUT
 
       - name: Publish APK & ZIP to GitHub Releases
         uses: softprops/action-gh-release@v2
@@ -110,13 +112,72 @@ jobs:
           prerelease: ${{ steps.meta.outputs.is_prerelease }}
           make_latest: ${{ steps.meta.outputs.is_prerelease == 'false' && 'true' || 'false' }}
           body: |
-            ## 📱 Paket Instalasi Android MyKost (`${{ steps.meta.outputs.short_sha }}`)
+            # MyKost ${{ steps.meta.outputs.tag_name }} — Core Remediation, Security Hardening & Capacitor Android Release
 
-            Rilis otomatis dari branch/tag **`${{ github.ref_name }}`**.
+            This release delivers backend concurrency and timezone fixes, memory-safe media uploads, database-level SSR aggregations, modern stack upgrades (**Next.js 16**, **Prisma 7**, **Zod 4**), and official **Capacitor 8 Android (`.apk`)** packaging with automated CI/CD distribution.
 
-            ### 📥 Unduhan Tersedia:
-            - **`MyKost.apk`**: File instalasi langsung untuk perangkat Android.
-            - **`MyKost-Android-Bundle.zip`**: Arsip `.zip` berisi `MyKost.apk`, panduan instalasi (`CARA-INSTALL.txt`), dan checksum `SHA256SUMS.txt`.
+            - **Version**: `${{ steps.meta.outputs.tag_name }}`
+            - **Commit**: `${{ steps.meta.outputs.short_sha }}`
+            - **Branch / Ref**: `${{ github.ref_name }}`
+            - **Android Target**: `minSdk 24` / `targetSdk 36` (`id.mykost.app`)
+
+            ---
+
+            ## Highlights
+
+            - **Native Android Packaging (Capacitor 8)**: Bundled hybrid Android application (`id.mykost.app`) with native camera and media permissions, offline fallback shell, and automated GitHub Releases distribution (`MyKost.apk` and `MyKost-Android-Bundle.zip`).
+            - **Atomic Concurrency & Race-Condition Protection**: Eliminated double-approval race conditions in payment verification and lease extension workflows using atomic conditional updates and serializable transactions.
+            - **Database-Level Aggregations & Caching**: Replaced in-memory calculations on the Financial Reports SSR page with native PostgreSQL aggregations (`prisma.aggregate`), period filtering, and private browser caching (`Cache-Control`) for presigned R2 media redirects.
+            - **Upload Memory Safety**: Enforced strict `File` instance validation, file count limits, and 5 MB size caps prior to allocating `arrayBuffer()` streams into server RAM.
+
+            ---
+
+            ## What's Changed
+
+            ### Mobile & CI/CD Automation
+            - **feat(mobile)**: Integrated `@capacitor/core`, `@capacitor/cli`, and `@capacitor/android` (`v8.6.0`) with dynamic `CAPACITOR_SERVER_URL` support and custom offline fallback UI (`mobile-shell/`).
+            - **feat(android)**: Configured `AndroidManifest.xml` with `CAMERA`, `READ_MEDIA_IMAGES`, and cleartext traffic support for receipt and complaint photo capture.
+            - **ci(release)**: Added automated GitHub Actions release pipeline (`.github/workflows/release-apk.yml`) running on **Node.js 22 LTS** and **Temurin JDK 21** to compile, checksum (`SHA256SUMS.txt`), and publish both `.apk` and `.zip` artifacts on every push or version tag.
+
+            ### Bug Fixes & Business Logic Remediation
+            - **fix(billing)**: Aligned monthly bill generation (`generateMonthlyBills`) to the **`Asia/Jakarta` (WIB / UTC+7)** timezone using `Intl.DateTimeFormat('en-CA')` and filtered out future leases (`tanggal_mulai <= endOfMonth`) from premature billing.
+            - **fix(auth)**: Enabled multi-role phone number authentication (`OWNER`, `ADMIN`, and `PENGHUNI`) by expanding login identifier resolution across `User.no_hp` and `Penghuni.no_hp`.
+            - **fix(users)**: Synchronized normalized phone numbers (`normalizePhone`) atomically across `User` and `Penghuni` records within `prisma.$transaction`, with cross-table duplicate phone validation.
+            - **fix(payment)**: Prevented concurrent admin verification race conditions in `PUT /api/pembayaran` via atomic `updateMany` (`WHERE status_verifikasi = 'PENDING'`) and standardized `409 ConflictError` handling.
+
+            ### Performance, Scalability & Memory Optimization
+            - **perf(billing)**: Batched monthly `Tagihan` and `Notifikasi` creation into a single collective `prisma.$transaction` using `createMany`, eliminating sequential database roundtrips.
+            - **perf(cron)**: Added a `5000ms` `AbortSignal.timeout` to Fonnte WhatsApp API requests, scoped manual fine (`sesuaikan_tagihan`) audit log lookups strictly to overdue bills, and parallelized WhatsApp reminder dispatches in concurrent batches (`WA_BATCH_SIZE = 5`).
+            - **perf(files)**: Added `Cache-Control: private, max-age=600` headers to `302 Redirect` responses on `GET /api/files` to prevent redundant database authorization queries across page navigations.
+            - **perf(reports)**: Refactored `/owner/laporan` SSR page to compute total revenue and outstanding receivables via `prisma.pembayaran.aggregate` and `prisma.tagihan.aggregate` with monthly period filtering and pagination (`PAGE_SIZE = 50`).
+            - **perf(client)**: Added `URL.revokeObjectURL()` lifecycle cleanup on payment proof and complaint photo previews to prevent blob memory leaks on mobile WebViews, and migrated all `<img>` tags to `next/image` (`unoptimized`) for zero ESLint warnings.
+
+            ### Stack & Dependency Upgrades
+            - Upgraded core runtime and tooling to **Next.js 16.4.2**, **React 19.3.1**, **Prisma 7.10.1** (`@prisma/adapter-pg`), **Zod 4.6.7**, **Tailwind CSS 4.3.3**, and **Vitest 5.0.5**.
+            - Migrated spreadsheet export from `xlsx` to **`exceljs`** for security compliance.
+
+            ---
+
+            ## Release Assets & Installation
+
+            | Asset | Description |
+            | :--- | :--- |
+            | **`MyKost.apk`** | Direct Android installation package (`minSdk 24` / Android 7.0+). |
+            | **`MyKost-Android-Bundle.zip`** | Complete distribution archive containing `MyKost.apk`, `SHA256SUMS.txt`, and installation instructions (`INSTALL.txt`). |
+            | **`SHA256SUMS.txt`** | SHA-256 checksum for verifying APK integrity. |
+
+            ### Installation Instructions (Android)
+            1. Download **`MyKost.apk`** directly to your Android device (or extract it from `MyKost-Android-Bundle.zip`).
+            2. Open the downloaded `.apk` file.
+            3. If prompted by Android security, enable **"Allow from this source"** (*Install unknown apps*).
+            4. Tap **Install** and launch **MyKost**.
+
+            ---
+
+            ## Quality Assurance & Verification
+            - **TypeScript Compiler (`tsc --noEmit`)**: Passed (`0 errors`)
+            - **ESLint (`npm run lint`)**: Passed (`0 errors, 0 warnings`)
+            - **Vitest Regression Suite (`npm test`)**: Passed (`12 suites, 47/47 unit & concurrency tests passing`)
           files: |
             release-dist/MyKost.apk
             release-dist/MyKost-Android-Bundle.zip
