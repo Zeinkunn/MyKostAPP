@@ -41,7 +41,7 @@ jobs:
 
       - name: Sync Capacitor Android
         env:
-          CAPACITOR_SERVER_URL: ${{ inputs.server_url || vars.CAPACITOR_SERVER_URL || secrets.CAPACITOR_SERVER_URL || vars.NEXT_PUBLIC_APP_URL || 'http://10.0.2.2:3000' }}
+          CAPACITOR_SERVER_URL: ${{ inputs.server_url || vars.CAPACITOR_SERVER_URL || secrets.CAPACITOR_SERVER_URL || vars.NEXT_PUBLIC_APP_URL || 'https://mykost.zeinkunn.my.id' }}
         run: npx cap sync android
 
       - name: Accept Android SDK Licenses & Build APK

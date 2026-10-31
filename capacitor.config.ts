@@ -1,9 +1,11 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
+const PRODUCTION_URL = 'https://mykost.zeinkunn.my.id';
+
 const serverUrl =
   process.env.CAPACITOR_SERVER_URL ||
   process.env.NEXT_PUBLIC_APP_URL ||
-  'http://10.0.2.2:3000';
+  PRODUCTION_URL;
 
 const isHttp = serverUrl.startsWith('http://');
 
@@ -15,6 +17,7 @@ const config: CapacitorConfig = {
     url: serverUrl,
     cleartext: isHttp,
     errorPath: 'offline.html',
+    allowNavigation: ['mykost.zeinkunn.my.id', '*.zeinkunn.my.id'],
   },
   android: {
     allowMixedContent: isHttp,
